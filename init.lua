@@ -87,7 +87,7 @@ require('lazy').setup({
 
       -- Useful status updates for LSP
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', tag = 'legacy', opts = {} },
+      { 'j-hui/fidget.nvim',       tag = 'legacy', opts = {} },
 
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
@@ -111,7 +111,7 @@ require('lazy').setup({
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
+  { 'folke/which-key.nvim',          opts = {} },
   {
     -- Adds git releated signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -125,7 +125,8 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
       on_attach = function(bufnr)
-        vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk, { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
+        vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
+          { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
         vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk, { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
         vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk, { buffer = bufnr, desc = '[P]review [H]unk' })
       end,
@@ -148,7 +149,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'gruvbox',
         component_separators = '|',
         section_separators = '',
       },
@@ -167,7 +168,7 @@ require('lazy').setup({
   },
 
   -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  { 'numToStr/Comment.nvim',         opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
   { 'nvim-telescope/telescope.nvim', branch = '0.1.x', dependencies = { 'nvim-lua/plenary.nvim' } },
@@ -194,6 +195,12 @@ require('lazy').setup({
     build = ':TSUpdate',
   },
 
+  -- File browser
+  -- {
+  --   "nvim-telescope/telescope-file-browser.nvim",
+  --   dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" }
+  -- },
+
   -- File explorer
   {
     "nvim-tree/nvim-tree.lua",
@@ -209,7 +216,7 @@ require('lazy').setup({
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
+  require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
 
   -- NOTE: The import below automatically adds your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -217,7 +224,7 @@ require('lazy').setup({
   --    up-to-date with whatever is in the kickstart repo.
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  { import = 'custom.plugins' },
+  -- { import = 'custom.testy' },
 }, {})
 
 -- [[ Setting options ]]
@@ -225,7 +232,7 @@ require('lazy').setup({
 -- NOTE: You can change these options as you wish!
 
 -- disable netrw in favor of nvimtree
-vim.g.loaded_netrw = 1
+-- vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
 -- Set highlight on search
@@ -233,6 +240,13 @@ vim.o.hlsearch = false
 
 -- Make line numbers default
 vim.wo.number = true
+
+-- Set current cursor line highlight
+vim.o.cursorline = true
+
+-- Tab settings
+vim.o.tabstop = 4
+vim.o.shiftwidth = 4
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
@@ -273,6 +287,12 @@ vim.o.termguicolors = true
 -- Enable relative line numbers
 vim.o.relativenumber = true
 
+-- [[ Theme settings ]]
+-- require("gruvbox").setup({
+--   bold = false,
+-- })
+-- vim.cmd("colorscheme gruvbox")
+
 -- [[ Basic Keymaps ]]
 
 -- Keymaps for better default experience
@@ -304,8 +324,13 @@ require('telescope').setup {
         ['<C-d>'] = false,
       },
     },
+    file_ignore_patterns = {
+      "build"
+    }
   },
 }
+-- require("telescope").load_extension("file_browser")
+
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
@@ -327,6 +352,10 @@ vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
+vim.keymap.set('n', '<leader>sb', require('telescope.builtin').current_buffer_fuzzy_find, { desc = '[S]earch [B]uffer' })
+vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
+
+-- vim.keymap.set('n', '<leader>ls', require('lspconfig.server_configurations.clangd').commands.ClangdSwitchSourceHeader, { desc = '[L]SP [S]witch Source Header' })
 
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
@@ -401,7 +430,11 @@ vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnos
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
 
 -- File explorer keymaps
-vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", {desc = 'Open file explorer'})
+vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { desc = '[e]xplore files' })
+vim.keymap.set("n", "<leader>E", ":NvimTreeFindFileToggle<CR>", { desc = '[E]xplor current file' })
+-- vim.keymap.set('n', '<leader>e', ":Telescope file_browser<CR>", { desc = '[e]xplore directory' })
+-- vim.keymap.set('n', '<leader>E', ":Telescope file_browser path=%:p:h select_buffer=true<CR>",
+--   { desc = '[E]xplore current directory' })
 
 -- [[ Configure LSP ]]
 --  This function gets run when an LSP connects to a particular buffer.
@@ -540,13 +573,13 @@ cmp.setup {
   },
 }
 
--- [[ Configure nvim-tree ]] 
+-- [[ Configure nvim-tree ]]
 local HEIGHT_RATIO = 0.8 -- You can change this
-local WIDTH_RATIO = 0.5  -- You can change this too
+local WIDTH_RATIO = 0.8  -- You can change this too
 
 require('nvim-tree').setup({
-  disable_netrw = true,
-  hijack_netrw = true,
+  disable_netrw = false, -- keep netrw enabled for vim-rhubarb
+  hijack_netrw = false,
   respect_buf_cwd = true,
   sync_root_with_cwd = true,
   view = {
@@ -562,7 +595,7 @@ require('nvim-tree').setup({
         local window_h_int = math.floor(window_h)
         local center_x = (screen_w - window_w) / 2
         local center_y = ((vim.opt.lines:get() - window_h) / 2)
-                         - vim.opt.cmdheight:get()
+            - vim.opt.cmdheight:get()
         return {
           border = "rounded",
           relative = "editor",
@@ -571,7 +604,7 @@ require('nvim-tree').setup({
           width = window_w_int,
           height = window_h_int,
         }
-        end,
+      end,
     },
     width = function()
       return math.floor(vim.opt.columns:get() * WIDTH_RATIO)
