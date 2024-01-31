@@ -48,6 +48,9 @@ vim.o.termguicolors = true
 -- Enable relative line numbers
 vim.o.relativenumber = true
 
+-- Enable GitHub copilot tab completion
+vim.g.copilot_assume_mapped = true
+
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {
