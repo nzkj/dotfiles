@@ -35,7 +35,10 @@ return {
         capabilities = capabilities
       })
       lspconfig.clangd.setup({
-        capabilities = capabilities
+        capabilities = capabilities,
+        -- Use utf-16 encoding for calngd to prevent "Multiple different client offset_encodings detected" error when
+        -- using Copilot LSP with Clangd LSP
+        cmd = { 'clangd', '--offset-encoding=utf-16' }
       })
       lspconfig.pyright.setup({
         capabilities = capabilities

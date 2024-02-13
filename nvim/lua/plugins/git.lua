@@ -3,6 +3,9 @@ return {
   { 'tpope/vim-fugitive' },
   { 'tpope/vim-rhubarb' },
 
+  -- GitHub AI completion
+  { 'github/copilot.vim' },
+
   -- Adds git releated signs to the gutter, as well as utilities for managing changes
   {
     'lewis6991/gitsigns.nvim',
@@ -16,11 +19,13 @@ return {
       },
       on_attach = function(bufnr)
         vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
-          { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
+          { buffer = bufnr, desc = '[G]it [P]revious Hunk' })
         vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk,
-          { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
-        vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk,
-          { buffer = bufnr, desc = '[P]review [H]unk' })
+          { buffer = bufnr, desc = '[G]it [N]ext Hunk' })
+        vim.keymap.set('n', '<leader>gv', require('gitsigns').preview_hunk,
+          { buffer = bufnr, desc = '[G]it [V]iew Hunk' })
+        vim.keymap.set('n', '<leader>gb', require('gitsigns').toggle_current_line_blame,
+          { buffer = bufnr, desc = '[G]it Toggle [B]lame' })
       end,
     },
   },
