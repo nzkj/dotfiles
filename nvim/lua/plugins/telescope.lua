@@ -19,9 +19,13 @@ return {
               ['<c-d>'] = "delete_buffer",
             },
           },
+          -- Ignore build files (e.g. for C++ projects)
           file_ignore_patterns = {
             "build"
           }
+        },
+        pickers = {
+          lsp_references = { fname_width = 50 },
         },
         extensions = {
           file_browser = {
@@ -50,6 +54,11 @@ return {
         { desc = '[S]earch [B]uffer' })
       vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>sj', require('telescope.builtin').jumplist, { desc = '[S]earch [J]umplist' })
+
+      -- LSP keymaps
+      vim.keymap.set('n', 'gr', require('telescope.builtin').lsp_references, { desc = '[G]oto [R]eferences' })
+      vim.keymap.set('n', '<leader>ss', require('telescope.builtin').lsp_document_symbols,
+        { desc = '[S]earch [S]ymbols' })
 
       -- Git keymaps
       vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
