@@ -59,6 +59,11 @@ vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = tr
 vim.o.spell = true
 vim.o.spelloptions = 'camel'
 
+-- General keymaps
+-- vim.api.nvim_set_keymap("n", "<TAB>", "<C-^>", { noremap = true, silent = true, desc = "Alternate buffers" })
+vim.api.nvim_set_keymap("n", "<Tab>", ":bnext<cr>", { noremap = true })
+vim.api.nvim_set_keymap("n", "<S-Tab>", ":bprevious<cr>", { noremap = true })
+
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {

@@ -5,8 +5,9 @@ return {
     branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
-      'nvim-telescope/telescope-live-grep-args.nvim',
       'nvim-tree/nvim-web-devicons',
+      'nvim-telescope/telescope-live-grep-args.nvim',
+      "debugloop/telescope-undo.nvim",
     },
     config = function()
       -- Call setup function with specific (non-default) settings
@@ -26,6 +27,7 @@ return {
         },
         pickers = {
           lsp_references = { fname_width = 50 },
+          lsp_document_symbols = { symbol_width = 50 },
         },
         extensions = {
           file_browser = {
@@ -39,10 +41,12 @@ return {
           },
         },
       }
+
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require("telescope").load_extension("live_grep_args"))
       pcall(require("telescope").load_extension("neoclip"))
       pcall(require("telescope").load_extension("file_browser"))
+      pcall(require("telescope").load_extension("undo"))
 
       -- Basic keymaps
       vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
@@ -75,6 +79,9 @@ return {
       -- Neoclip keymaps
       vim.keymap.set('n', '<leader>sc', ':Telescope neoclip<CR>',
         { desc = '[S]earch [C]lipboard' })
+
+      -- Undo keymap
+      vim.keymap.set("n", "<leader>su", ":Telescope undo<CR>", { desc = "[S]earch [U]ndo" })
 
       -- Explorer keymaps
       vim.keymap.set('n', '<leader>e', ":Telescope file_browser<CR>", { desc = '[E]xplore root directory' })

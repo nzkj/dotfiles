@@ -29,8 +29,6 @@ require("options")
 -- Each Lua module (my-plugin.lua) returns a Lua table that defines the plugin to be installed.
 -- We don't need to use `require('my-plugin').setup()` in this file as Lazy calls it by default IF
 -- the `config` function is defined in the Lua module.
--- Note: We may include the require/setup function inside the module's `config` function if we want
--- to load the plugin by default (i.e. don't lazy load). See telescope.lua as an example.
 -- Note: We require "options" above because it isn't a Lua module, but just a Lua script.
 -- For more info, see:
 -- `https://github.com/folke/lazy.nvim?tab=readme-ov-file#-structuring-your-plugins`.
