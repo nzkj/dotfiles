@@ -61,7 +61,6 @@ return {
       vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, { desc = 'Signature Documentation' })
       vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, { desc = 'Type [D]efinition' })
 
-
       -- TODO: Use LspAttach hook instead of global keymap
       vim.keymap.set('n', '<leader>ls', '<Cmd>ClangdSwitchSourceHeader<CR>', { desc = '[L]SP [S]witch Source Header' })
 
