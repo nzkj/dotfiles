@@ -5,6 +5,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Show substitutions even if off-screen
 vim.opt.inccommand = 'split'
 
+-- Hide current mode in command line as it's shown using status line
+vim.opt.showmode = false
+
 -- Make line numbers default
 vim.wo.number = true
 
