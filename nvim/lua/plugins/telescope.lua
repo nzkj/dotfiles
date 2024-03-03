@@ -74,19 +74,20 @@ return {
       vim.keymap.set("v", "<leader>sw", require("telescope-live-grep-args.shortcuts").grep_visual_selection,
         { desc = '[S]earch current [W]ords' }) -- Only works in visual mode, not visual line
       vim.keymap.set("n", "<leader>sg", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>",
-        { desc = '[S]earch by [G]rep' })
+        { desc = '[S]earch by [G]rep', silent = true })
 
       -- Neoclip keymaps
       vim.keymap.set('n', '<leader>sc', ':Telescope neoclip<CR>',
-        { desc = '[S]earch [C]lipboard' })
+        { desc = '[S]earch [C]lipboard', silent = true })
 
       -- Undo keymap
-      vim.keymap.set("n", "<leader>su", ":Telescope undo<CR>", { desc = "[S]earch [U]ndo" })
+      vim.keymap.set("n", "<leader>su", ":Telescope undo<CR>", { desc = "[S]earch [U]ndo", silent = true })
 
       -- Explorer keymaps
-      vim.keymap.set('n', '<leader>e', ":Telescope file_browser<CR>", { desc = '[E]xplore root directory' })
+      vim.keymap.set('n', '<leader>e', ":Telescope file_browser<CR>",
+        { desc = '[E]xplore root directory', silent = true })
       vim.keymap.set('n', '<leader>E', ":Telescope file_browser path=%:p:h select_buffer=true<CR>",
-        { desc = '[E]xplore current directory' })
+        { desc = '[E]xplore current directory', silent = true })
     end,
   },
 

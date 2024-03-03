@@ -1,7 +1,3 @@
--- Set highlight on search, but clear on pressing <Esc> in normal mode
-vim.opt.hlsearch = true
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
-
 -- Show substitutions even if off-screen
 vim.opt.inccommand = 'split'
 
@@ -58,18 +54,9 @@ vim.o.relativenumber = true
 -- Enable GitHub copilot tab completion
 vim.g.copilot_assume_mapped = true
 
--- Remap for dealing with word wrap
-vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
-vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
-
 -- Enable spell checking
 vim.o.spell = true
 vim.o.spelloptions = 'camel'
-
--- General keymaps
--- vim.api.nvim_set_keymap("n", "<TAB>", "<C-^>", { noremap = true, silent = true, desc = "Alternate buffers" })
--- vim.api.nvim_set_keymap("n", "<Tab>", ":bnext<cr>", { noremap = true })
--- vim.api.nvim_set_keymap("n", "<S-Tab>", ":bprevious<cr>", { noremap = true })
 
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -80,3 +67,42 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     group = highlight_group,
     pattern = '*',
 })
+
+---------------------
+-- General Keymaps --
+---------------------
+
+-- Switch between buffers
+-- vim.api.nvim_set_keymap("n", "<TAB>", "<C-^>", { noremap = true, silent = true, desc = "Alternate buffers" })
+-- vim.api.nvim_set_keymap("n", "<Tab>", ":bnext<cr>", { noremap = true })
+-- vim.api.nvim_set_keymap("n", "<S-Tab>", ":bprevious<cr>", { noremap = true })
+
+-- Remap for dealing with word wrap
+vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- Set highlight on search, but clear on pressing <Esc> in normal mode
+vim.opt.hlsearch = true
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+
+-- Make macros easier to invoke
+vim.keymap.set('n', 'Q', '@qj')
+vim.keymap.set('x', 'Q', ':norm @q<CR>') -- Run macro on each line of visual selection
+
+-- Toggle relative line numbers (helpful when sharing screen)
+function ToggleRelativeLineNumbers()
+    if vim.o.relativenumber then
+        vim.wo.relativenumber = false
+    else
+        vim.wo.relativenumber = true
+    end
+end
+
+vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
+    { desc = '[T]oggle [R]elative line numbers', silent = true })
+
+-- Switch between splits using Ctrl + arrow keys
+vim.api.nvim_set_keymap('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-Left>', '<C-w>h', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-Right>', '<C-w>l', { noremap = true, silent = true })
