@@ -28,5 +28,35 @@ return {
       vim.keymap.set("x", "<C-q>", "<C-a>", { silent = true, noremap = true })
       vim.keymap.set("x", "g<C-q>", "g<C-a>", { silent = true, noremap = true })
     end
+  },
+
+  {
+    "folke/flash.nvim",
+    event = "VeryLazy",
+    ---@type Flash.Config
+    opts = {
+      -- Prioritise Colemak keys
+      labels = "arstgmneioqwfpbjluyzxcdvkh",
+      modes = {
+        treesitter = {
+          labels = "arstgmneioqwfpbjluyzxcdvkh",
+        },
+        -- Disable f,F,t,T,; and , for now
+        char = {
+          enabled = false,
+        },
+        search = {
+          -- Remove accidental jumping when searching for text you don't know doesn't exist
+          enabled = false,
+        },
+      },
+    },
+    -- stylua: ignore
+    keys = {
+      { "s", mode = { "n", "x", "o" }, function() require("flash").jump() end,              desc = "Flash" },
+      { "S", mode = { "n", "x", "o" }, function() require("flash").treesitter() end,        desc = "Flash Treesitter" },
+      { "r", mode = "o",               function() require("flash").remote() end,            desc = "Remote Flash" },
+      { "R", mode = { "o", "x" },      function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+    },
   }
 }
