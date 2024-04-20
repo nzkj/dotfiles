@@ -1,4 +1,13 @@
+# Aliases
 alias v="nvim"
+alias gs="git status"
+alias ga="git add"
+alias gc="git commit"
+alias gcm="git commit -m"
+alias gd="git diff"
+alias gp="git push"
+alias gpf="git push -f"
+alias wompwomp="gdb"
 
 # Change default editor to Neovim (instead of NANO)
 export EDITOR="nvim"
