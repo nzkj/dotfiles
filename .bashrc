@@ -4,9 +4,11 @@ alias gs="git status"
 alias ga="git add"
 alias gc="git commit"
 alias gcm="git commit -m"
+alias gca="git commit --amend"
 alias gd="git diff"
 alias gp="git push"
 alias gpf="git push -f"
+alias gl="git log"
 alias wompwomp="gdb"
 
 # Change default editor to Neovim (instead of NANO)

@@ -58,6 +58,10 @@ vim.g.copilot_assume_mapped = true
 vim.o.spell = true
 vim.o.spelloptions = 'camel'
 
+-- Automatic indenting when pressing enter
+vim.opt.smartindent = true
+vim.opt.autoindent = true
+
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {

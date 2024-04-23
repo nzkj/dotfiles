@@ -36,10 +36,10 @@ return {
     ---@type Flash.Config
     opts = {
       -- Prioritise Colemak keys
-      labels = "arstgmneioqwfpbjluyzxcdvkh",
+      labels = "arstneiogmqwfpbjluyzxcdvkh",
       modes = {
         treesitter = {
-          labels = "arstgmneioqwfpbjluyzxcdvkh",
+          labels = "arstneiogmqwfpbjluyzxcdvkh",
         },
         -- Disable f,F,t,T,; and , for now
         char = {

@@ -32,4 +32,8 @@ require("options")
 -- Note: We require "options" above because it isn't a Lua module, but just a Lua script.
 -- For more info, see:
 -- `https://github.com/folke/lazy.nvim?tab=readme-ov-file#-structuring-your-plugins`.
-require('lazy').setup("plugins")
+require('lazy').setup("plugins", {
+    change_detection = {
+        notify = false
+    }
+})
