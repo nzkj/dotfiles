@@ -76,27 +76,28 @@ For my layout, I use a combination of Qwerty (on a regular keyboard, such as the
 
 The split keyboard is programmable, which allows me to create macros (e.g for switching TMUX windows and sessions, or between applications), layers for numbers/symbols/navigation, and more.
 
-My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. A preview of my layout in Oryx is shown below:
+My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/7q5rr/JZ66Z/0). An image preview of my layers in Oryx is shown below:
 
 
 <details>
   <summary>Base Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/cc4c4448a93df24cadb5d2470ed484b827715703/BaseLayer.png">
+  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/BaseLayer.png">
 </details>
 
 <details>
   <summary>Symbols Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/cc4c4448a93df24cadb5d2470ed484b827715703/SymbolsLayer.png">
+  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/SymbolsLayer.png">
 </details>
 
 <details>
-  <summary>Navigation Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/cc4c4448a93df24cadb5d2470ed484b827715703/NavigationLayer.png">
+  <summary>Navigation and Number Layer</summary>
+  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/NavigationLayer.png">
 </details>
 
 <details>
-  <summary>Numbers Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/cc4c4448a93df24cadb5d2470ed484b827715703/NumbersLayer.png">
+  <summary>Shortcuts Layer</summary>
+  This is a one-shot layer. It is accessed via a combo by pressing the first and second layer keys at the same time.
+  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/ShortcutsLayer.png">
 </details>
 
 ## Other
