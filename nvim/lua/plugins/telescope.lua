@@ -7,7 +7,6 @@ return {
       'nvim-lua/plenary.nvim',
       'nvim-tree/nvim-web-devicons',
       'nvim-telescope/telescope-live-grep-args.nvim',
-      "debugloop/telescope-undo.nvim",
     },
     config = function()
       -- Call setup function with specific (non-default) settings
@@ -46,27 +45,27 @@ return {
       pcall(require("telescope").load_extension("live_grep_args"))
       pcall(require("telescope").load_extension("neoclip"))
       pcall(require("telescope").load_extension("file_browser"))
-      pcall(require("telescope").load_extension("undo"))
 
       -- Basic keymaps
-      vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
-      vim.keymap.set('n', '<leader><space>', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
-      vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sH', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp!' })
-      vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
-      vim.keymap.set('n', '<leader>sb', require('telescope.builtin').current_buffer_fuzzy_find,
+      local builtin = require 'telescope.builtin'
+      vim.keymap.set('n', '<leader>?', builtin.oldfiles, { desc = '[?] Find recently opened files' })
+      vim.keymap.set('n', '<leader><space>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sH', builtin.help_tags, { desc = '[S]earch [H]elp!' })
+      vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
+      vim.keymap.set('n', '<leader>sb', builtin.current_buffer_fuzzy_find,
         { desc = '[S]earch [B]uffer' })
-      vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>sj', require('telescope.builtin').jumplist, { desc = '[S]earch [J]umplist' })
+      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
+      vim.keymap.set('n', '<leader>sj', builtin.jumplist, { desc = '[S]earch [J]umplist' })
 
       -- LSP keymaps
-      vim.keymap.set('n', 'gr', require('telescope.builtin').lsp_references, { desc = '[G]oto [R]eferences' })
-      vim.keymap.set('n', '<leader>ss', require('telescope.builtin').lsp_document_symbols,
+      vim.keymap.set('n', 'gr', builtin.lsp_references, { desc = '[G]oto [R]eferences' })
+      vim.keymap.set('n', '<leader>ss', builtin.lsp_document_symbols,
         { desc = '[S]earch [S]ymbols' })
 
       -- Git keymaps
-      vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
-      vim.keymap.set('n', '<leader>gs', require('telescope.builtin').git_status, { desc = 'Search [G]it [S]tatus' })
+      vim.keymap.set('n', '<leader>gf', builtin.git_files, { desc = 'Search [G]it [F]iles' })
+      vim.keymap.set('n', '<leader>gs', builtin.git_status, { desc = 'Search [G]it [S]tatus' })
 
       -- Grep keymaps
       vim.keymap.set("n", "<leader>sw", require("telescope-live-grep-args.shortcuts").grep_word_under_cursor,
@@ -75,13 +74,16 @@ return {
         { desc = '[S]earch current [W]ords' }) -- Only works in visual mode, not visual line
       vim.keymap.set("n", "<leader>sg", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>",
         { desc = '[S]earch by [G]rep', silent = true })
+      vim.keymap.set('n', '<leader>s/', function()
+        builtin.live_grep {
+          grep_open_files = true,
+          prompt_title = 'Live Grep in Open Files',
+        }
+      end, { desc = '[S]earch [/] in Open Files' })
 
       -- Neoclip keymaps
       vim.keymap.set('n', '<leader>sc', ':Telescope neoclip<CR>',
         { desc = '[S]earch [C]lipboard', silent = true })
-
-      -- Undo keymap
-      vim.keymap.set("n", "<leader>su", ":Telescope undo<CR>", { desc = "[S]earch [U]ndo", silent = true })
 
       -- Explorer keymaps
       vim.keymap.set('n', '<leader>e', ":Telescope file_browser<CR>",
