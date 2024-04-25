@@ -14,8 +14,12 @@ alias wompwomp="gdb"
 # Change default editor to Neovim (instead of NANO)
 export EDITOR="nvim"
 
+# Disable closing terminal when pressing C-d
+set -o ignoreeof
+
 # Enable vi keybinds in terminal and replicate vi cursor style
-set -o vi
-bind 'set show-mode-in-prompt on'
-bind 'set vi-ins-mode-string \1\e[6 q\2'
-bind 'set vi-cmd-mode-string \1\e[2 q\2'
+# (I don't actually use this anymore)
+# set -o vi
+# bind 'set show-mode-in-prompt on'
+# bind 'set vi-ins-mode-string \1\e[6 q\2'
+# bind 'set vi-cmd-mode-string \1\e[2 q\2'
