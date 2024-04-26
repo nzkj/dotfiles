@@ -9,8 +9,7 @@ I typically daily drive a Windows machine that's ssh'd into a Linux machine, or 
 
 My current nerd font of choice is [Hack Nerd Font Mono](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/Hack).
 
-
-## TMUX
+### TMUX
 
 [TMUX](https://github.com/tmux/tmux/wiki) is how I manage my projects and terminals; it is essential to my workflow.
 
@@ -21,6 +20,14 @@ My structure revolves around:
 - **Panes**: Not used all that much, as I typically create another window.
 
 While terminal multiplexing is amazing, having persistent sessions is crucial for me. Once I've created a TMUX session, I can attach to it from my laptop (or any other machine) through ssh, or my Linux machine, and pick up where I left off. Paired with Neovim, it makes working in the terminal seamless.
+
+### Zoxide
+
+Zoxide is a smarter `cd` command that makes navigating around frequently used directories much easier. Read more [here](https://github.com/ajeetdsouza/zoxide).
+
+### fzf
+
+Fzf is a command line fuzzy finder. In particular, I find the `Ctrl-r` keybind especially useful, but it is also used with Zoxide's interactive selection. Read more [here](https://github.com/junegunn/fzf).
 
 
 ## Neovim
@@ -37,12 +44,12 @@ Learn more at [Telescope](https://github.com/nvim-telescope/telescope.nvim).
 
 Often when I am editing text, I am mainly focused on up to four "core" files. I use Harpoon to attach these four files to the keymaps below:
 
-1. `C-t` for file 1.
-2. `C-s` for file 2.
-3. `C-r` for file 3.
-4. `C-a` for file 4.
+1. `Ctrl-t` for file 1.
+2. `Ctrl-s` for file 2.
+3. `Ctrl-r` for file 3.
+4. `Ctrl-a` for file 4.
 
-<sup>Note: "arst" are the left homerow keys for Colemak-Dhm. C means Ctrl.</sup>
+<sup>Note: "arst" are the left homerow keys for Colemak-Dhm.</sup>
 
 This allows me to seamlessly switch between files of interest wicked fast. Harpoon has the added benefit of remembering your previous cursor position in the file, and persists through opening/closing Neovim. I navigate to other files from these "core" files via Neovim's LSP (e.g go-to-definition, go-to-reference) and Telescope's fuzzy searching.
 

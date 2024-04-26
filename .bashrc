@@ -26,3 +26,6 @@ set -o ignoreeof
 
 # Smarter cd
 eval "$(zoxide init --cmd cd bash)"
+
+# Terminal fuzzy finder
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
