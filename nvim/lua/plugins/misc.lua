@@ -11,11 +11,19 @@ return {
 
     -- Add indentation guides even on blank lines
     {
-        'lukas-reineke/indent-blankline.nvim',
+        "lukas-reineke/indent-blankline.nvim",
+        main = "ibl",
         opts = {
-            char = '┊',
-            show_trailing_blankline_indent = false,
-        },
+            indent = {
+                char = "┊",
+                smart_indent_cap = false
+            },
+            scope = {
+                -- enabled = false,
+                -- Uncomment if enabled
+                show_start = false,
+            },
+        }
     },
 
     -- "gc" to comment visual regions/lines

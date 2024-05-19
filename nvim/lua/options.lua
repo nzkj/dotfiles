@@ -71,6 +71,10 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     pattern = '*',
 })
 
+-- Don't have `o` add a comment
+-- Alternatively, in case comment is unwanted in a specific place use CTRL-U to quickly delete it
+-- vim.opt.formatoptions:remove "o"
+
 ---------------------
 -- General Keymaps --
 ---------------------
@@ -83,6 +87,9 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+vim.keymap.set('n', '<Up>', "v:count == 0 ? 'gk' : '<Up>'", { expr = true, silent = true })
+vim.keymap.set('n', '<Down>', "v:count == 0 ? 'gj' : '<Down>'", { expr = true, silent = true })
 
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
@@ -109,3 +116,15 @@ vim.api.nvim_set_keymap('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true
 vim.api.nvim_set_keymap('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<C-Left>', '<C-w>h', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<C-Right>', '<C-w>l', { noremap = true, silent = true })
+
+-- Resize splits using Alt + arrow keys
+-- Split resizing is slightly confusing. It is not based on split location!
+-- Left = "Make thinner", Right = "Make wider", Up = "Make taller", Down = "Make shorter"
+vim.api.nvim_set_keymap("n", "<M-Left>", "<c-w>5<", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<M-Right>", "<c-w>5>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<M-Up>", "<c-w>5+", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<M-Down>", "<c-w>5-", { noremap = true, silent = true })
+
+-- Stay in indent mode when changing indentation
+vim.api.nvim_set_keymap("v", "<", "<gv", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("v", ">", ">gv", { noremap = true, silent = true })
