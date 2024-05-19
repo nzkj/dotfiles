@@ -2,7 +2,8 @@ return {
   -- Fuzzy Finder (files, lsp, etc)
   {
     'nvim-telescope/telescope.nvim',
-    branch = '0.1.x',
+    -- Comment line below to get rolling release
+    -- branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-tree/nvim-web-devicons',
@@ -13,6 +14,9 @@ return {
       require('telescope').setup {
         defaults = {
           layout_strategy = "vertical",
+          path_display = {
+            "filename_first",
+          },
           mappings = {
             i = {
               ['<C-u>'] = false,

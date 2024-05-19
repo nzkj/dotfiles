@@ -7,7 +7,14 @@ return {
     { 'tpope/vim-surround' },
 
     -- Useful plugin to show you pending keybinds
-    { 'folke/which-key.nvim', opts = {} },
+    {
+        'folke/which-key.nvim',
+        opts = {
+            window = {
+                border = "single",
+            },
+        }
+    },
 
     -- Add indentation guides even on blank lines
     {
