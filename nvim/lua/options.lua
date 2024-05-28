@@ -84,12 +84,12 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- vim.api.nvim_set_keymap("n", "<Tab>", ":bnext<cr>", { noremap = true })
 -- vim.api.nvim_set_keymap("n", "<S-Tab>", ":bprevious<cr>", { noremap = true })
 
--- Remap for dealing with word wrap
+-- Remaps for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
-
-vim.keymap.set('n', '<Up>', "v:count == 0 ? 'gk' : '<Up>'", { expr = true, silent = true })
-vim.keymap.set('n', '<Down>', "v:count == 0 ? 'gj' : '<Down>'", { expr = true, silent = true })
+-- Note: Need to use the Lua function as the string-based evaluation doesn't work with <Up> or <Down>
+vim.keymap.set('n', '<Up>', function() return vim.v.count == 0 and 'gk' or '<Up>' end, { expr = true, silent = true })
+vim.keymap.set('n', '<Down>', function() return vim.v.count == 0 and 'gj' or '<Down>' end, { expr = true, silent = true })
 
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
