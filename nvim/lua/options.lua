@@ -79,17 +79,11 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- General Keymaps --
 ---------------------
 
--- Switch between buffers
--- vim.api.nvim_set_keymap("n", "<TAB>", "<C-^>", { noremap = true, silent = true, desc = "Alternate buffers" })
--- vim.api.nvim_set_keymap("n", "<Tab>", ":bnext<cr>", { noremap = true })
--- vim.api.nvim_set_keymap("n", "<S-Tab>", ":bprevious<cr>", { noremap = true })
-
 -- Remaps for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
--- Note: Need to use the Lua function as the string-based evaluation doesn't work with <Up> or <Down>
-vim.keymap.set('n', '<Up>', function() return vim.v.count == 0 and 'gk' or '<Up>' end, { expr = true, silent = true })
-vim.keymap.set('n', '<Down>', function() return vim.v.count == 0 and 'gj' or '<Down>' end, { expr = true, silent = true })
+vim.keymap.set('n', '<Up>', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+vim.keymap.set('n', '<Down>', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
@@ -112,19 +106,19 @@ vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
     { desc = '[T]oggle [R]elative line numbers', silent = true })
 
 -- Switch between splits using Ctrl + arrow keys
-vim.api.nvim_set_keymap('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<C-Left>', '<C-w>h', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<C-Right>', '<C-w>l', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-Left>', '<C-w>h', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-Right>', '<C-w>l', { noremap = true, silent = true })
 
 -- Resize splits using Alt + arrow keys
 -- Split resizing is slightly confusing. It is not based on split location!
 -- Left = "Make thinner", Right = "Make wider", Up = "Make taller", Down = "Make shorter"
-vim.api.nvim_set_keymap("n", "<M-Left>", "<c-w>5<", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<M-Right>", "<c-w>5>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<M-Up>", "<c-w>5+", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<M-Down>", "<c-w>5-", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-Left>", "<c-w>5<", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-Right>", "<c-w>5>", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-Up>", "<c-w>5+", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-Down>", "<c-w>5-", { noremap = true, silent = true })
 
 -- Stay in indent mode when changing indentation
-vim.api.nvim_set_keymap("v", "<", "<gv", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("v", ">", ">gv", { noremap = true, silent = true })
+vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
+vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
