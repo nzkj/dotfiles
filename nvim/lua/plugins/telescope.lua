@@ -11,16 +11,32 @@ return {
     },
     config = function()
       -- Call setup function with specific (non-default) settings
+      local actions = require "telescope.actions"
+      local action_layout = require("telescope.actions.layout")
       require('telescope').setup {
         defaults = {
+          -- Adjust output of grep, like removing white space with `--trim`
+          vimgrep_arguments = {
+            "rg",
+            "--color=never",
+            "--no-heading",
+            "--with-filename",
+            "--line-number",
+            "--column",
+            "--smart-case",
+            "--trim"
+          },
           layout_strategy = "vertical",
           path_display = {
             "filename_first",
           },
           mappings = {
+            n = {
+              ["<M-p>"] = action_layout.toggle_preview
+            },
             i = {
-              ['<C-u>'] = false,
-              ['<c-d>'] = "delete_buffer",
+              ["<M-p>"] = action_layout.toggle_preview,
+              ["<C-d>"] = actions.delete_buffer + actions.move_to_top,
             },
           },
           -- Ignore build files (e.g. for C++ projects)

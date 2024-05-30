@@ -26,9 +26,9 @@ return {
                 smart_indent_cap = false
             },
             scope = {
-                -- enabled = false,
+                enabled = false,
                 -- Uncomment if enabled
-                show_start = false,
+                -- show_start = false,
             },
         }
     },
