@@ -34,6 +34,7 @@ return {
     },
 
     -- "gc" to comment visual regions/lines
+    -- Note: Neovim 0.10 has this by default, but it uses "/* */" instead of "//" which I dislike
     { 'numToStr/Comment.nvim', opts = {} },
 
     -- File explorer that lets you edit as a buffer
