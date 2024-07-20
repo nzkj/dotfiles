@@ -31,8 +31,14 @@ return {
           end,
         },
         window = {
-          completion = cmp.config.window.bordered(),
-          documentation = cmp.config.window.bordered(),
+          completion = {
+            border = "rounded",
+            winhighlight = "Normal:Normal,FloatBorder:Normal,CursorLine:Visual,Search:None",
+          },
+          documentation = {
+            border = "rounded",
+            winhighlight = "Normal:Normal,FloatBorder:Normal,CursorLine:Visual,Search:None",
+          },
         },
         mapping = cmp.mapping.preset.insert({
           ['<C-n>'] = cmp.mapping.select_next_item(),
