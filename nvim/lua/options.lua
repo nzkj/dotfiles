@@ -71,9 +71,8 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     pattern = '*',
 })
 
--- Don't have `o` add a comment
--- Alternatively, in case comment is unwanted in a specific place use CTRL-U to quickly delete it
--- vim.opt.formatoptions:remove "o"
+-- Don't auto comment new lines after o and O
+vim.cmd([[autocmd FileType * set formatoptions-=cro]])
 
 ---------------------
 -- General Keymaps --
