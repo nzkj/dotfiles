@@ -1,6 +1,6 @@
 # dotfiles
 
-This repository contains my configuration for various tools. In the following sections, I explain some of the design choices related to my developer workflow.
+This repository contains my configuration for various tools. In the following sections, I'll explain some aspects of my developer workflow.
 
 
 ## Terminal
@@ -19,7 +19,7 @@ My structure revolves around:
 - **Windows**: First window for Neovim, the rest are for any normal terminal stuff.
 - **Panes**: Not used all that much, as I typically create another window.
 
-While terminal multiplexing is amazing, having persistent sessions is crucial for me. Once I've created a TMUX session, I can attach to it from my laptop (or any other machine) through ssh, or my Linux machine, and pick up where I left off. Paired with Neovim, it makes working in the terminal seamless.
+Terminal multiplexing is amazing and having persistent sessions is crucial for me. Once I've created a TMUX session, I can attach to it from my laptop (or any other machine) through ssh, which is really convenient when working remotely. Paired with Neovim, it makes working in the terminal seamless.
 
 ### Zoxide
 
@@ -27,16 +27,16 @@ Zoxide is a smarter `cd` command that makes navigating around frequently used di
 
 ### fzf
 
-Fzf is a command line fuzzy finder. In particular, I find the `Ctrl-r` keybind especially useful, but it is also used with Zoxide's interactive selection. Read more [here](https://github.com/junegunn/fzf).
+Fzf is a command line fuzzy finder. In particular, I like it for the revere command search (using `Ctrl-r`) and checking out git branches (see `gbc` in `.bashrc`). Read more [here](https://github.com/junegunn/fzf).
 
 
 ## Neovim
 
-My text-editor/IDE of choice is [Neovim](https://neovim.io/). Neovim, unlike any other editor, allows me to reach the coveted "flow state" in developing; paired with TMUX, it reduces the mental overhead of actioning my thoughts. I have highlighted some specific plugins that have made a world of difference.
+My text-editor/IDE of choice is [Neovim](https://neovim.io/). Neovim, unlike any other editor, allows me to achieve the "flow state"; paired with TMUX, it reduces the mental overhead of actioning my thoughts. I have highlighted some specific plugins that have made a world of difference.
 
 #### Telescope
 
-I use Telescope extensively; it is the single most important plugin in my Neovim configuration (other than the LSP). Telescope allows me to fuzzy find over files, folders, open buffers (removing the need for showing file tabs), occurrences of text via grep, symbols and so much more.
+I use Telescope extensively; it is the one of most important plugins in my Neovim configuration. Telescope allows me to fuzzy find over files, folders, open buffers/files, text via grep, symbols and so much more.
 
 Learn more at [Telescope](https://github.com/nvim-telescope/telescope.nvim).
 
@@ -68,44 +68,13 @@ This plugin is simple in concept - it allows editing of directories as a Vim buf
 Learn more at [Oil](https://github.com/stevearc/oil.nvim).
 
 
-## Web Browsing
-
-Once you become so used to Vim motions, you begin to want to use them everywhere. A great extension is Vimium, which adds Vim motions to the web browser.
-
-For instance, you can navigate up and down pages with keys like `h j k l` for small movements, `d u` for half page scrolling etc. You can also use `f` to show a key on all links, whereby pressing the shown key clicks the link. No more mouse!
-
-Learn more at [Vimium](https://github.com/philc/vimium).
-
-
 ## Keyboard
 
 For my layout, I use a combination of Qwerty (on a regular keyboard, such as the built-in laptop keyboard) and [Colemak DH-m](https://colemakmods.github.io/mod-dh/) (on my split keyboard). My split keyboard of choice is the [ZSA Voyager](https://www.zsa.io/voyager), which has 52 keys (with two keys per thumb cluster).
 
 The split keyboard is programmable, which allows me to create macros (e.g for switching TMUX windows and sessions, or between applications), layers for numbers/symbols/navigation, and more.
 
-My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/7q5rr/JZ66Z/0). An image preview of my layers in Oryx is shown below:
-
-
-<details>
-  <summary>Base Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/BaseLayer.png">
-</details>
-
-<details>
-  <summary>Symbols Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/SymbolsLayer.png">
-</details>
-
-<details>
-  <summary>Navigation and Number Layer</summary>
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/NavigationLayer.png">
-</details>
-
-<details>
-  <summary>Shortcuts Layer</summary>
-  This is a one-shot layer. It is accessed via a combo by pressing the first and second layer keys at the same time.
-  <img src="https://gist.githubusercontent.com/nzkj/de74dc4e5c7498657477e3759ad1d185/raw/95b44c76d5d126b5446c4bcb1178411b8df2d8b6/ShortcutsLayer.png">
-</details>
+My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/LNErX/ayya3/0).
 
 ## Other
 
