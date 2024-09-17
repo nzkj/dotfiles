@@ -104,6 +104,18 @@ end
 vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
     { desc = '[T]oggle [R]elative line numbers', silent = true })
 
+-- Close tab
+vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = '[T]ab Close', silent = true })
+
+-- Open help window in a vertical split to the right.
+vim.api.nvim_create_autocmd("BufWinEnter", {
+    group = vim.api.nvim_create_augroup("help_window_right", {}),
+    pattern = { "*.txt" },
+    callback = function()
+        if vim.o.filetype == 'help' then vim.cmd.wincmd("L") end
+    end
+})
+
 -- Switch between splits using Ctrl + arrow keys
 vim.keymap.set('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
 vim.keymap.set('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })

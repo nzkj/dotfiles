@@ -36,6 +36,7 @@ fo() {
 
 
 # {{ Aliases }}
+
 alias v="nvim"
 
 # Git
@@ -48,6 +49,8 @@ alias gd="git diff"
 alias gp="git push"
 alias gpf="git push -f"
 alias gl="git log"
+alias gf="git fetch"
+alias gsp="git stash push -m"
 
 # Checkout branch with fuzzy finding search
 alias gbc="git branch --sort=committerdate | fzf | xargs git checkout"

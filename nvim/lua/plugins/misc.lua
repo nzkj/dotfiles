@@ -47,6 +47,6 @@ return {
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 	},
 
-	-- Illuminate the current word under the cursor
-	-- { 'RRethy/vim-illuminate' },
+	-- Highlight the current word under the cursor
+	{ 'RRethy/vim-illuminate' },
 }

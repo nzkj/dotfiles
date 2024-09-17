@@ -47,6 +47,25 @@ return {
         pickers = {
           lsp_references = { fname_width = 50 },
           lsp_document_symbols = { symbol_width = 50 },
+          git_commits = {
+            mappings = {
+              -- Note:
+              -- Press <CR> to checkout the commit
+              -- Press <ESC><CR> to open the commit in Diffview
+              n = {
+                ["<CR>"] = function(prompt_bufnr)
+                  -- Get the selected commit hash
+                  local entry = require("telescope.actions.state").get_selected_entry()
+
+                  -- Close telescope
+                  require("telescope.actions").close(prompt_bufnr)
+
+                  -- Open diffview
+                  vim.cmd('DiffviewOpen ' .. entry.value)
+                end,
+              }
+            }
+          },
         },
         extensions = {
           file_browser = {
@@ -84,8 +103,7 @@ return {
         { desc = '[S]earch [S]ymbols' })
 
       -- Git keymaps
-      vim.keymap.set('n', '<leader>gf', builtin.git_files, { desc = 'Search [G]it [F]iles' })
-      vim.keymap.set('n', '<leader>gs', builtin.git_status, { desc = 'Search [G]it [S]tatus' })
+      vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
 
       -- Grep keymaps
       vim.keymap.set("n", "<leader>sw", require("telescope-live-grep-args.shortcuts").grep_word_under_cursor,
