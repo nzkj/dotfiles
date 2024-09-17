@@ -133,3 +133,7 @@ vim.keymap.set("n", "<M-Down>", "<c-w>5-", { noremap = true, silent = true })
 -- Stay in indent mode when changing indentation
 vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
+
+-- Quickfix list navigation
+vim.keymap.set("n", "<C-n>", "<cmd>cnext<CR>zz")
+vim.keymap.set("n", "<C-p>", "<cmd>cprev<CR>zz")
