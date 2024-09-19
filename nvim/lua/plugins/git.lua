@@ -21,9 +21,9 @@ return {
       on_attach = function(bufnr)
         -- Navigating git hunks
         vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
-          { buffer = bufnr, desc = '[G]it Previous Hunk' })
+          { buffer = bufnr, desc = '[G]it [P]revious Hunk' })
         vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk,
-          { buffer = bufnr, desc = '[G]it Next Hunk' })
+          { buffer = bufnr, desc = '[G]it [N]ext Hunk' })
         vim.keymap.set('n', '<leader>gv', require('gitsigns').preview_hunk,
           { buffer = bufnr, desc = '[G]it [V]iew Hunk' })
 

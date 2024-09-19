@@ -1,22 +1,38 @@
 return {
-  -- Fuzzy Finder (files, lsp, etc)
+  -- Fuzzy Finder (files, grep, LSP, etc.)
   {
     'nvim-telescope/telescope.nvim',
+    event = 'VimEnter',
     -- Comment line below to get rolling release
     -- branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-tree/nvim-web-devicons',
       'nvim-telescope/telescope-live-grep-args.nvim',
+      'nvim-telescope/telescope-file-browser.nvim',
+      {
+        'nvim-telescope/telescope-fzf-native.nvim',
+        -- `build` is used to run some command when the plugin is installed/updated.
+        -- This is only run then, not every time Neovim starts up.
+        build = 'make',
+        cond = function()
+          if vim.fn.executable 'make' == 0 then
+            print('WARNING: telescope-fzf-native.nvim: make is not installed')
+          end
+          return vim.fn.executable 'make' == 1
+        end,
+      },
     },
     config = function()
-      -- Call setup function with specific (non-default) settings
       local actions = require "telescope.actions"
       local action_layout = require("telescope.actions.layout")
+      local lga_actions = require("telescope-live-grep-args.actions")
+
       require('telescope').setup {
         defaults = {
-          -- Adjust output of grep, like removing white space with `--trim`
+          -- Output format of grep
           vimgrep_arguments = {
+            -- Defaults
             "rg",
             "--color=never",
             "--no-heading",
@@ -24,12 +40,11 @@ return {
             "--line-number",
             "--column",
             "--smart-case",
+            -- Remove whitespace from results
             "--trim"
           },
           layout_strategy = "vertical",
-          path_display = {
-            "filename_first",
-          },
+          path_display = { "filename_first" },
           mappings = {
             n = {
               ["<M-p>"] = action_layout.toggle_preview
@@ -37,6 +52,7 @@ return {
             i = {
               ["<M-p>"] = action_layout.toggle_preview,
               ["<C-d>"] = actions.delete_buffer + actions.move_to_top,
+              ["<C-f>"] = actions.to_fuzzy_refine
             },
           },
           -- Ignore build files (e.g. for C++ projects)
@@ -49,25 +65,29 @@ return {
           lsp_document_symbols = { symbol_width = 50 },
           git_commits = {
             mappings = {
-              -- Note:
-              -- Press <CR> to checkout the commit
-              -- Press <ESC><CR> to open the commit in Diffview
               n = {
+                -- Press <CR> to checkout the commit (default)
+                -- Press <ESC><CR> to open the commit in Diffview
                 ["<CR>"] = function(prompt_bufnr)
-                  -- Get the selected commit hash
-                  local entry = require("telescope.actions.state").get_selected_entry()
-
-                  -- Close telescope
+                  local commit_hash = require("telescope.actions.state").get_selected_entry()
                   require("telescope.actions").close(prompt_bufnr)
-
-                  -- Open diffview
-                  vim.cmd('DiffviewOpen ' .. entry.value)
+                  vim.cmd('DiffviewOpen ' .. commit_hash.value)
                 end,
               }
             }
           },
         },
         extensions = {
+          live_grep_args = {
+            mappings = {
+              i = {
+                ["<C-d>"] = false, -- Disable delete buffer to prevent error
+                ["<C-f>"] = lga_actions.to_fuzzy_refine,
+                ["<C-k>"] = lga_actions.quote_prompt(),
+                ["<C-i>"] = lga_actions.quote_prompt({ postfix = " --iglob " }),
+              },
+            },
+          },
           file_browser = {
             git_status = false,
             grouped = true,
@@ -81,37 +101,36 @@ return {
       }
 
       pcall(require('telescope').load_extension, 'fzf')
-      pcall(require("telescope").load_extension("live_grep_args"))
-      pcall(require("telescope").load_extension("neoclip"))
-      pcall(require("telescope").load_extension("file_browser"))
+      pcall(require("telescope").load_extension, "live_grep_args")
+      pcall(require("telescope").load_extension, "neoclip")
+      pcall(require("telescope").load_extension, "file_browser")
+
+      local builtin = require('telescope.builtin')
+      local lga_shortcuts = require("telescope-live-grep-args.shortcuts")
 
       -- Basic keymaps
-      local builtin = require 'telescope.builtin'
-      vim.keymap.set('n', '<leader>?', builtin.oldfiles, { desc = '[?] Find recently opened files' })
-      vim.keymap.set('n', '<leader><space>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader><space>', builtin.buffers, { desc = '[ ] Open buffers' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>sH', builtin.help_tags, { desc = '[S]earch [H]elp!' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
-      vim.keymap.set('n', '<leader>sb', builtin.current_buffer_fuzzy_find,
-        { desc = '[S]earch [B]uffer' })
-      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
+      vim.keymap.set('n', '<leader>sH', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sj', builtin.jumplist, { desc = '[S]earch [J]umplist' })
+      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch [.] Recent Files' })
+      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
+      vim.keymap.set('n', '<leader>sb', builtin.current_buffer_fuzzy_find, { desc = '[S]earch [B]uffer' })
 
       -- LSP keymaps
       vim.keymap.set('n', 'gr', builtin.lsp_references, { desc = '[G]oto [R]eferences' })
-      vim.keymap.set('n', '<leader>ss', builtin.lsp_document_symbols,
-        { desc = '[S]earch [S]ymbols' })
+      vim.keymap.set('n', '<leader>ss', builtin.lsp_document_symbols, { desc = '[S]earch [S]ymbols' })
 
       -- Git keymaps
       vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })
 
       -- Grep keymaps
-      vim.keymap.set("n", "<leader>sw", require("telescope-live-grep-args.shortcuts").grep_word_under_cursor,
-        { desc = '[S]earch current [W]ord' })
-      vim.keymap.set("v", "<leader>sw", require("telescope-live-grep-args.shortcuts").grep_visual_selection,
-        { desc = '[S]earch current [W]ords' }) -- Only works in visual mode, not visual line
+      vim.keymap.set("n", "<leader>sw", lga_shortcuts.grep_word_under_cursor, { desc = '[S]earch [W]ord' })
+      vim.keymap.set("v", "<leader>sw", lga_shortcuts.grep_visual_selection,
+        { desc = '[S]earch  [W]ords' }) -- Only works in visual mode, not visual line
       vim.keymap.set("n", "<leader>sg", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>",
-        { desc = '[S]earch by [G]rep', silent = true })
+        { desc = '[S]earch [G]rep', silent = true })
       vim.keymap.set('n', '<leader>s/', function()
         builtin.live_grep {
           grep_open_files = true,
@@ -129,23 +148,6 @@ return {
       vim.keymap.set('n', '<leader>E', ":Telescope file_browser path=%:p:h select_buffer=true<CR>",
         { desc = '[E]xplore current directory', silent = true })
     end,
-  },
-
-  -- Fuzzy finder algorithm
-  {
-    'nvim-telescope/telescope-fzf-native.nvim',
-    -- NOTE: If you are having trouble with this installation,
-    --       refer to the README for telescope-fzf-native for more instructions.
-    build = 'make',
-    cond = function()
-      return vim.fn.executable 'make' == 1
-    end,
-  },
-
-  -- File browser
-  {
-    "nvim-telescope/telescope-file-browser.nvim",
-    dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" },
   },
 
   -- Save clipboard history

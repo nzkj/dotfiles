@@ -6,15 +6,25 @@ return {
 	-- Enable editing surroundings
 	{ 'tpope/vim-surround' },
 
-	-- Useful plugin to show you pending keybinds
+	-- Useful plugin to show you pending keymaps
 	{
 		'folke/which-key.nvim',
+		event = 'VimEnter',
 		opts = {
 			icons = {
 				mappings = false,
 			},
 			win = {
 				border = "single",
+			},
+			spec = {
+				{ '<leader>c', group = '[C]ode',        mode = { 'n', 'x' } },
+				{ '<leader>d', group = '[D]ocument' },
+				{ '<leader>r', group = '[R]ename' },
+				{ '<leader>s', group = '[S]earch' },
+				{ '<leader>t', group = '[T]oggle/[T]ab' },
+				{ '<leader>g', group = '[G]it' },
+				{ '<leader>l', group = '[L]SP' },
 			},
 		}
 	},

@@ -19,6 +19,7 @@ return {
   -- Completion engine
   {
     "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
     config = function()
       local cmp = require("cmp")
       local luasnip = require 'luasnip'

@@ -15,7 +15,11 @@ vim.o.shiftwidth = 4
 vim.o.mouse = 'a'
 
 -- Sync clipboard between OS and Neovim.
-vim.o.clipboard = 'unnamedplus'
+-- Schedule the setting after `UiEnter` because it can increase startup-time.
+vim.schedule(function()
+    vim.opt.clipboard = 'unnamedplus'
+end)
+
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -105,7 +109,7 @@ vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
     { desc = '[T]oggle [R]elative line numbers', silent = true })
 
 -- Close tab
-vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = '[T]ab Close', silent = true })
+vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = '[T]ab [C]lose', silent = true })
 
 -- Open help window in a vertical split to the right.
 vim.api.nvim_create_autocmd("BufWinEnter", {
