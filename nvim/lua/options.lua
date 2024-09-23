@@ -141,3 +141,6 @@ vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
 -- Quickfix list navigation
 vim.keymap.set("n", "<C-n>", "<cmd>cnext<CR>zz")
 vim.keymap.set("n", "<C-p>", "<cmd>cprev<CR>zz")
+
+-- Open Oil file explorer (C-c to close)
+vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { desc = '[O]il', silent = true })
