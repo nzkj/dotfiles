@@ -65,6 +65,9 @@ vim.o.spelloptions = 'camel'
 vim.opt.smartindent = true
 vim.opt.autoindent = true
 
+-- Disable swap files
+vim.opt.swapfile = false
+
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -78,11 +81,24 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 -- Don't auto comment new lines after o and O
 vim.cmd([[autocmd FileType * set formatoptions-=cro]])
 
+-------------------
+-- Auto Commands --
+-------------------
+
 vim.api.nvim_create_autocmd('BufReadPost', {
     desc = 'Open file at the last position it was edited earlier',
     group = misc_augroup,
     pattern = '*',
     command = 'silent! normal! g`"zv'
+})
+
+-- Open help window in a vertical split to the right.
+vim.api.nvim_create_autocmd("BufWinEnter", {
+    group = vim.api.nvim_create_augroup("help_window_right", {}),
+    pattern = { "*.txt" },
+    callback = function()
+        if vim.o.filetype == 'help' then vim.cmd.wincmd("L") end
+    end
 })
 
 ---------------------
@@ -117,15 +133,6 @@ vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
 
 -- Close tab
 vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = '[T]ab [C]lose', silent = true })
-
--- Open help window in a vertical split to the right.
-vim.api.nvim_create_autocmd("BufWinEnter", {
-    group = vim.api.nvim_create_augroup("help_window_right", {}),
-    pattern = { "*.txt" },
-    callback = function()
-        if vim.o.filetype == 'help' then vim.cmd.wincmd("L") end
-    end
-})
 
 -- Switch between splits using Ctrl + arrow keys
 vim.keymap.set('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
