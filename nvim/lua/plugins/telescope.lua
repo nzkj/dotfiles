@@ -24,10 +24,38 @@ return {
       },
     },
     config = function()
+      -- Focus on preview window for pickers
+      local focus_preview_keymap = "<Tab>"
+      local focus_preview = function(prompt_bufnr)
+        local picker = require("telescope.actions.state").get_current_picker(prompt_bufnr)
+
+        if not picker:get_selection() then
+          print("No entry selected, cannot focus preview")
+          return
+        end
+        if not picker.previewer then
+          print("No previewer available, cannot focus preview")
+          return
+        end
+
+        -- Set keymap to switch back to prompt window
+        vim.keymap.set("n", focus_preview_keymap, function()
+          vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", picker.prompt_win))
+        end, { buffer = picker.previewer.state.bufnr })
+
+        -- Set keymap to exit focus mode
+        vim.keymap.set("n", "<ESC>", function()
+          vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", picker.prompt_win))
+          vim.cmd("stopinsert")
+        end, { buffer = picker.previewer.state.bufnr })
+
+        -- Focus on preview window
+        vim.cmd(string.format("noautocmd lua vim.api.nvim_set_current_win(%s)", picker.previewer.state.winid))
+      end
+
       local actions = require "telescope.actions"
       local action_layout = require("telescope.actions.layout")
       local lga_actions = require("telescope-live-grep-args.actions")
-
       require('telescope').setup {
         defaults = {
           -- Output format of grep
@@ -52,7 +80,8 @@ return {
             i = {
               ["<M-p>"] = action_layout.toggle_preview,
               ["<C-d>"] = actions.delete_buffer + actions.move_to_top,
-              ["<C-f>"] = actions.to_fuzzy_refine
+              ["<C-f>"] = actions.to_fuzzy_refine,
+              [focus_preview_keymap] = focus_preview,
             },
           },
           -- Ignore build files (e.g. for C++ projects)
@@ -84,7 +113,7 @@ return {
                 ["<C-d>"] = false, -- Disable delete buffer to prevent error
                 ["<C-f>"] = lga_actions.to_fuzzy_refine,
                 ["<C-k>"] = lga_actions.quote_prompt(),
-                ["<C-i>"] = lga_actions.quote_prompt({ postfix = " --iglob " }),
+                ["C-g"] = lga_actions.quote_prompt({ postfix = " --iglob " }),
               },
             },
           },
