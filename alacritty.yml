@@ -1,0 +1,18 @@
+env:
+  TERM: xterm-256color
+
+font:
+  normal:
+    family: Hack Nerd Font
+  bold:
+    family: Hack Nerd Font
+  italic:
+    family: Hack Nerd Font
+  bold_italic:
+    family: Hack Nerd Font
+  size: 13
+
+# Treat Option (Alt) as Meta in macOS
+window:
+  option_as_alt: "Both"
+
