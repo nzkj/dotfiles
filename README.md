@@ -74,7 +74,7 @@ For my layout, I use a combination of Qwerty (on a regular keyboard, such as the
 
 The split keyboard is programmable, which allows me to create macros (e.g for switching TMUX windows and sessions, or between applications), layers for numbers/symbols/navigation, and more.
 
-My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/LNErX/ayya3/0).
+My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/LNErX/ynb9d/0/intro).
 
 ## Other
 
