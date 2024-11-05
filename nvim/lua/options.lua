@@ -158,3 +158,9 @@ vim.keymap.set("n", "<C-p>", "<cmd>cprev<CR>zz")
 
 -- Open Oil file explorer (C-c to close)
 vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { desc = '[O]il', silent = true })
+
+-- Switch between marks more easily
+vim.keymap.set("n", "<M-t>", "`tzz", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-s>", "`szz", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-r>", "`rzz", { noremap = true, silent = true })
+vim.keymap.set("n", "<M-a>", "`azz", { noremap = true, silent = true })

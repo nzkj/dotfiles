@@ -32,7 +32,7 @@ Fzf is a command line fuzzy finder. In particular, I like it for the revere comm
 
 ## Neovim
 
-My text-editor/IDE of choice is [Neovim](https://neovim.io/). Neovim, unlike any other editor, allows me to achieve the "flow state"; paired with TMUX, it reduces the mental overhead of actioning my thoughts. I have highlighted some specific plugins that have made a world of difference.
+My text-editor/IDE of choice is [Neovim](https://neovim.io/). Neovim, unlike any other editor, allows me to achieve the "flow state"; paired with TMUX, it reduces the mental overhead of actioning my thoughts. I have highlighted some specific plugins/configurations that have made a world of difference.
 
 #### Telescope
 
@@ -40,9 +40,9 @@ I use Telescope extensively; it is the one of most important plugins in my Neovi
 
 Learn more at [Telescope](https://github.com/nvim-telescope/telescope.nvim).
 
-#### Harpoon 
+#### Harpoon
 
-Often when I am editing text, I am mainly focused on up to four "core" files. I use Harpoon to attach these four files to the keymaps below:
+Often when I am editing text, I'm mainly focused on up to four "core" files. I use Harpoon to attach these four files to the keymaps below:
 
 1. `Ctrl-t` for file 1.
 2. `Ctrl-s` for file 2.
@@ -54,6 +54,19 @@ Often when I am editing text, I am mainly focused on up to four "core" files. I 
 This allows me to seamlessly switch between files of interest wicked fast. Harpoon has the added benefit of remembering your previous cursor position in the file, and persists through opening/closing Neovim. I navigate to other files from these "core" files via Neovim's LSP (e.g go-to-definition, go-to-reference) and Telescope's fuzzy searching.
 
 Learn more at [Harpoon](https://github.com/ThePrimeagen/harpoon).
+
+#### Marks
+
+In a similar vein to the previous section, I'm often focused on up to four "core" locations _within_ a file. I use Neovim marks to attach these locations to the keymaps below:
+
+1. `Alt-t` for mark `t`.
+2. `Alt-s` for mark `s`.
+3. `Alt-r` for mark `r`.
+4. `Alt-a` for mark `a`.
+
+I can mark a location in a file by pressing `m` followed by the desired letter (e.g. `mt`). Then, with the keymaps above, I can switch between locations of interest wicked fast. Each mark is unique to the file; in other words, each file can have its own set of `arst` marks.
+
+See `nvim/lua/options.lua` for the keymaps.
 
 #### Flash
 
