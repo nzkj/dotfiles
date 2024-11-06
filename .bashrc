@@ -1,27 +1,20 @@
-# Change default editor to Neovim
-export EDITOR="nvim"
+# =================== #
+# == Miscellaneous == #
+# =================== #
 
 # Disable closing terminal when pressing C-d
 set -o ignoreeof
 
-# Enable vi keybinds in terminal and replicate vi cursor style
-# (I don't actually use this anymore)
-# set -o vi
-# bind 'set show-mode-in-prompt on'
-# bind 'set vi-ins-mode-string \1\e[6 q\2'
-# bind 'set vi-cmd-mode-string \1\e[2 q\2'
+# Add Neovim bin to PATH via Bob version manager
+export PATH="$PATH:/home/nzkj/.local/share/bob/nvim-bin"
+
+# Change default editor to Neovim
+export EDITOR="nvim"
 
 
-# {{ Tools }}
-
-# Smarter cd based on frequency and recency
-eval "$(zoxide init --cmd cd bash)"
-
-# Terminal fuzzy finder
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-
-
-## {{ Functions }}
+# =============== #
+# == Functions == #
+# =============== #
 
 # Fuzzy find files using fzf, preview with bat, open in nvim or exit
 fo() {
@@ -35,11 +28,11 @@ fo() {
 }
 
 
-# {{ Aliases }}
+# ============= #
+# == Aliases == #
+# ============= #
 
 alias v="nvim"
-
-# Git
 alias gs="git status"
 alias ga="git add"
 alias gc="git commit"
@@ -54,3 +47,14 @@ alias gsp="git stash push -m"
 
 # Checkout branch with fuzzy finding search
 alias gbc="git branch --sort=committerdate | fzf | xargs git checkout"
+
+
+# =========== #
+# == Tools == #
+# =========== #
+
+# Terminal fuzzy finder
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# Smarter cd based on frequency and recency
+eval "$(zoxide init --cmd cd bash)"

@@ -2,10 +2,24 @@
 
 This repository contains my configuration for various tools. In the following sections, I'll explain some aspects of my developer workflow.
 
+## Dependencies
+
+Here's a summary of the dependencies for my config:
+1. [TMUX](https://github.com/tmux/tmux?tab=readme-ov-file#installation)
+2. [Neovim](https://github.com/neovim/neovim) via [Bob](https://github.com/MordechaiHadad/bob?tab=readme-ov-file#-installation)
+3. [Ripgrep](https://github.com/BurntSushi/ripgrep?tab=readme-ov-file#installation)
+4. [Xclip](https://github.com/astrand/xclip)
+5. [Zoxide](https://github.com/ajeetdsouza/zoxide?tab=readme-ov-file#installation)
+6. [Fzf](https://github.com/junegunn/fzf?tab=readme-ov-file#installation)
+7. [Bat](https://github.com/sharkdp/bat?tab=readme-ov-file#installation)
+8. [Hack Nerd Font Mono](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/Hack)
+
 
 ## Terminal
 
-I typically daily drive a Windows machine that's ssh'd into a Linux machine, or use Windows Subsystem for Linux (WSL). For this reason, I'm normally using [Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701?rtc=1&hl=en-nz&gl=NZ) as my emulator. When I'm working on a Mac, I use [Alacritty](https://github.com/alacritty/alacritty).
+- Windows: [Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701?rtc=1&hl=en-nz&gl=NZ)
+- Mac: [Alacritty](https://github.com/alacritty/alacritty)
+- Linux: [Gnome Terminal](https://help.gnome.org/users/gnome-terminal/stable/)
 
 My current nerd font of choice is [Hack Nerd Font Mono](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/Hack).
 
@@ -88,6 +102,7 @@ For my layout, I use a combination of Qwerty (on a regular keyboard, such as the
 The split keyboard is programmable, which allows me to create macros (e.g for switching TMUX windows and sessions, or between applications), layers for numbers/symbols/navigation, and more.
 
 My layout has been optimised for me; things are made as accessible and ergonomic as possible. I've configured the layout via ZSA's Oryx tool, but the raw layout files are included in this repo too. You can access my layout in the Oryx configurator [here](https://configure.zsa.io/voyager/layouts/LNErX/ynb9d/0/intro).
+
 
 ## Other
 
