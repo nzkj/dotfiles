@@ -68,6 +68,13 @@ vim.opt.autoindent = true
 -- Disable swap files
 vim.opt.swapfile = false
 
+-- Improve visual block mode
+vim.opt.virtualedit = 'block'
+
+-------------------
+-- Auto Commands --
+-------------------
+
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -80,10 +87,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 -- Don't auto comment new lines after o and O
 vim.cmd([[autocmd FileType * set formatoptions-=cro]])
-
--------------------
--- Auto Commands --
--------------------
 
 vim.api.nvim_create_autocmd('BufReadPost', {
     desc = 'Open file at the last position it was edited earlier',
