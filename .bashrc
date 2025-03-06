@@ -27,6 +27,29 @@ fo() {
     fi
 }
 
+t() {
+    if ! command -v tmux &> /dev/null; then
+        echo "Error: tmux is not installed."
+        return 1
+    fi
+
+    if [ -n "$TMUX" ]; then
+        echo "Error: don't run tmux in tmux"
+        return 1
+    fi
+
+    session_name=$(basename "$(pwd)")
+    if tmux has-session -t "$session_name" &> /dev/null; then
+        echo "Error: session '${session_name}' already exists."
+        return 1
+    fi
+
+    # Create new session with two windows
+    tmux new-session -d -s $session_name
+    tmux new-window
+    tmux attach-session -t $session_name
+}
+
 
 # ============= #
 # == Aliases == #
