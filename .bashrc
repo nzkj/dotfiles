@@ -8,9 +8,9 @@ set -o ignoreeof
 # Add Neovim bin to PATH via Bob version manager
 export PATH="$PATH:/home/nzkj/.local/share/bob/nvim-bin"
 
-# Change default editor to Neovim
+# Change defaults to Neovim
 export EDITOR="nvim"
-
+export MANPAGER="nvim +Man!"
 
 # =============== #
 # == Functions == #
