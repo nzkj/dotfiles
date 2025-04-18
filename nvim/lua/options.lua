@@ -12,12 +12,12 @@ vim.o.tabstop = 4
 vim.o.shiftwidth = 4
 
 -- Enable mouse mode
-vim.o.mouse = 'a'
+vim.o.mouse = "a"
 
 -- Sync clipboard between OS and Neovim.
 -- Schedule the setting after `UiEnter` because it can increase startup-time.
 vim.schedule(function()
-    vim.opt.clipboard = 'unnamedplus'
+	vim.opt.clipboard = "unnamedplus"
 end)
 
 -- If performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
@@ -35,7 +35,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 
 -- Keep signcolumn on by default
-vim.wo.signcolumn = 'yes'
+vim.wo.signcolumn = "yes"
 
 -- Change new splits to open right/bottom
 vim.o.splitright = true
@@ -47,7 +47,7 @@ vim.o.timeout = true
 vim.o.timeoutlen = 300
 
 -- Set completeopt to have a better completion experience
-vim.o.completeopt = 'menuone,noselect'
+vim.o.completeopt = "menuone,noselect"
 
 -- NOTE: You should make sure your terminal supports this
 vim.o.termguicolors = true
@@ -58,11 +58,11 @@ vim.o.relativenumber = true
 -- Enable GitHub copilot tab completion
 vim.g.copilot_assume_mapped = true
 vim.g.copilot_no_tab_map = true
-vim.keymap.set('i', '<C-y>', 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
+vim.keymap.set("i", "<C-y>", 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
 
 -- Enable spell checking
 vim.o.spell = true
-vim.o.spelloptions = 'camel'
+vim.o.spelloptions = "camel"
 
 -- Automatic indenting when pressing enter
 vim.opt.smartindent = true
@@ -72,39 +72,39 @@ vim.opt.autoindent = true
 vim.opt.swapfile = false
 
 -- Improve visual block mode
-vim.opt.virtualedit = 'block'
+vim.opt.virtualedit = "block"
 
 -------------------
 -- Auto Commands --
 -------------------
 
 -- Highlight on yank
-vim.api.nvim_create_autocmd('TextYankPost', {
-    desc = "Highlight when yanking text",
-    group = vim.api.nvim_create_augroup('YankHighlight', { clear = true }),
-    callback = function()
-        vim.highlight.on_yank()
-    end,
+vim.api.nvim_create_autocmd("TextYankPost", {
+	desc = "Highlight when yanking text",
+	group = vim.api.nvim_create_augroup("YankHighlight", { clear = true }),
+	callback = function()
+		vim.highlight.on_yank()
+	end,
 })
 
 -- Don't auto comment new lines after o and O
 vim.cmd([[autocmd FileType * set formatoptions-=cro]])
 
-vim.api.nvim_create_autocmd('BufReadPost', {
-    desc = 'Open file at the last position it was edited earlier',
-    group = misc_augroup,
-    pattern = '*',
-    command = 'silent! normal! g`"zv'
+vim.api.nvim_create_autocmd("BufReadPost", {
+	desc = "Open file at the last position it was edited earlier",
+	group = misc_augroup,
+	pattern = "*",
+	command = 'silent! normal! g`"zv',
 })
 
 -- Open help/manpage window in a vertical split to the right.
 vim.api.nvim_create_autocmd("BufWinEnter", {
-    group = vim.api.nvim_create_augroup("help_window_right", {}),
-    callback = function()
-        if vim.o.filetype == 'help' or vim.bo.filetype == 'man' then
-            vim.cmd.wincmd("L")
-        end
-    end
+	group = vim.api.nvim_create_augroup("help_window_right", {}),
+	callback = function()
+		if vim.o.filetype == "help" or vim.bo.filetype == "man" then
+			vim.cmd.wincmd("L")
+		end
+	end,
 })
 
 ---------------------
@@ -112,39 +112,55 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
 ---------------------
 
 -- Remaps for dealing with word wrap
-vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
-vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
-vim.keymap.set('n', '<Up>', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
-vim.keymap.set('n', '<Down>', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+vim.keymap.set("n", "<Up>", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+vim.keymap.set("n", "<Down>", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
-vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
 -- Make macros easier to invoke
-vim.keymap.set('n', 'Q', '@qj')
-vim.keymap.set('x', 'Q', ':norm @q<CR>') -- Run macro on each line of visual selection
+vim.keymap.set("n", "Q", "@qj")
+vim.keymap.set("x", "Q", ":norm @q<CR>") -- Run macro on each line of visual selection
 
 -- Toggle relative line numbers (helpful when sharing screen)
 function ToggleRelativeLineNumbers()
-    if vim.o.relativenumber then
-        vim.wo.relativenumber = false
-    else
-        vim.wo.relativenumber = true
-    end
+	if vim.o.relativenumber then
+		vim.wo.relativenumber = false
+	else
+		vim.wo.relativenumber = true
+	end
 end
 
-vim.keymap.set('n', '<leader>tr', ':lua ToggleRelativeLineNumbers()<CR>',
-    { desc = '[T]oggle [R]elative line numbers', silent = true })
+vim.keymap.set(
+	"n",
+	"<leader>tr",
+	":lua ToggleRelativeLineNumbers()<CR>",
+	{ desc = "[T]oggle [R]elative line numbers", silent = true }
+)
 
 -- Close tab
-vim.keymap.set('n', '<leader>tc', ':tabclose<CR>', { desc = '[T]ab [C]lose', silent = true })
+vim.keymap.set("n", "<leader>tc", ":tabclose<CR>", { desc = "[T]ab [C]lose", silent = true })
+vim.keymap.set("n", "<leader>tq", ":cclose<CR>", { desc = "[T]ab [C]lose", silent = true })
+
+-- Toggle the quickfix
+vim.keymap.set("n", "<leader>q", function()
+	for _, win in ipairs(vim.fn.getwininfo()) do
+		if win.quickfix == 1 then
+			vim.cmd("cclose")
+			return
+		end
+	end
+	vim.cmd("copen")
+end, { desc = "Toggle Quickfix" })
 
 -- Switch between splits using Ctrl + arrow keys
-vim.keymap.set('n', '<C-Up>', '<C-w>k', { noremap = true, silent = true })
-vim.keymap.set('n', '<C-Down>', '<C-w>j', { noremap = true, silent = true })
-vim.keymap.set('n', '<C-Left>', '<C-w>h', { noremap = true, silent = true })
-vim.keymap.set('n', '<C-Right>', '<C-w>l', { noremap = true, silent = true })
+vim.keymap.set("n", "<C-Up>", "<C-w>k", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-Down>", "<C-w>j", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-Left>", "<C-w>h", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-Right>", "<C-w>l", { noremap = true, silent = true })
 
 -- Resize splits using Alt + arrow keys
 -- Split resizing is slightly confusing. It is not based on split location!
@@ -163,34 +179,10 @@ vim.keymap.set("n", "<C-n>", "<cmd>cnext<CR>zz")
 vim.keymap.set("n", "<C-p>", "<cmd>cprev<CR>zz")
 
 -- Open Oil file explorer (C-c to close)
-vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { desc = '[O]il', silent = true })
+vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { desc = "[O]il", silent = true })
 
 -- Switch between marks more easily
 vim.keymap.set("n", "<M-t>", "`tzz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-s>", "`szz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-r>", "`rzz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-a>", "`azz", { noremap = true, silent = true })
-
--------------------
--- Miscellaneous --
--------------------
-
--- TODO: Change the border hl
-vim.diagnostic.config {
-    severity_sort = true,
-    float = { border = 'rounded', source = 'if_many' },
-    underline = { severity = vim.diagnostic.severity.ERROR },
-    virtual_text = {
-        source = 'if_many',
-        spacing = 2,
-        format = function(diagnostic)
-            local diagnostic_message = {
-                [vim.diagnostic.severity.ERROR] = diagnostic.message,
-                [vim.diagnostic.severity.WARN] = diagnostic.message,
-                [vim.diagnostic.severity.INFO] = diagnostic.message,
-                [vim.diagnostic.severity.HINT] = diagnostic.message,
-            }
-            return diagnostic_message[diagnostic.severity]
-        end,
-    },
-}
