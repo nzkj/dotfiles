@@ -3,8 +3,6 @@ return {
   {
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    -- Comment line below to get rolling release
-    -- branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-tree/nvim-web-devicons',
@@ -148,8 +146,9 @@ return {
       vim.keymap.set('n', '<leader>sb', builtin.current_buffer_fuzzy_find, { desc = '[S]earch [B]uffer' })
 
       -- LSP keymaps
-      vim.keymap.set('n', 'gr', builtin.lsp_references, { desc = '[G]oto [R]eferences' })
-      vim.keymap.set('n', '<leader>ss', builtin.lsp_document_symbols, { desc = '[S]earch [S]ymbols' })
+      vim.keymap.set('n', 'grr', builtin.lsp_references, { desc = '[G]oto [R]eferences' })
+      vim.keymap.set('n', 'gO', builtin.lsp_document_symbols, { desc = 'Open Document Symbols' })
+      vim.keymap.set('n', 'gW', builtin.lsp_dynamic_workspace_symbols, { desc = 'Open Workspace Symbols' })
 
       -- Git keymaps
       vim.keymap.set('n', '<leader>gc', builtin.git_commits, { desc = '[G]it [C]ommits' })

@@ -5,7 +5,7 @@ return {
   { 'tpope/vim-rhubarb' },
 
   -- GitHub AI completion
-  { 'github/copilot.vim' },
+  -- { 'github/copilot.vim' },
 
   -- Git signs in the sign column
   {

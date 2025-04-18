@@ -20,6 +20,9 @@ vim.schedule(function()
     vim.opt.clipboard = 'unnamedplus'
 end)
 
+-- If performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
+-- instead raise a dialog asking if you wish to save the current file(s)
+vim.opt.confirm = true
 
 -- Enable break indent
 vim.o.breakindent = true
@@ -76,13 +79,12 @@ vim.opt.virtualedit = 'block'
 -------------------
 
 -- Highlight on yank
-local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
 vim.api.nvim_create_autocmd('TextYankPost', {
+    desc = "Highlight when yanking text",
+    group = vim.api.nvim_create_augroup('YankHighlight', { clear = true }),
     callback = function()
         vim.highlight.on_yank()
     end,
-    group = highlight_group,
-    pattern = '*',
 })
 
 -- Don't auto comment new lines after o and O
@@ -168,3 +170,27 @@ vim.keymap.set("n", "<M-t>", "`tzz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-s>", "`szz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-r>", "`rzz", { noremap = true, silent = true })
 vim.keymap.set("n", "<M-a>", "`azz", { noremap = true, silent = true })
+
+-------------------
+-- Miscellaneous --
+-------------------
+
+-- TODO: Change the border hl
+vim.diagnostic.config {
+    severity_sort = true,
+    float = { border = 'rounded', source = 'if_many' },
+    underline = { severity = vim.diagnostic.severity.ERROR },
+    virtual_text = {
+        source = 'if_many',
+        spacing = 2,
+        format = function(diagnostic)
+            local diagnostic_message = {
+                [vim.diagnostic.severity.ERROR] = diagnostic.message,
+                [vim.diagnostic.severity.WARN] = diagnostic.message,
+                [vim.diagnostic.severity.INFO] = diagnostic.message,
+                [vim.diagnostic.severity.HINT] = diagnostic.message,
+            }
+            return diagnostic_message[diagnostic.severity]
+        end,
+    },
+}

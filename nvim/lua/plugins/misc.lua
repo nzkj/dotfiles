@@ -18,11 +18,11 @@ return {
 				border = "single",
 			},
 			spec = {
-				{ '<leader>c', group = '[C]ode',        mode = { 'n', 'x' } },
+				{ '<leader>c', group = '[C]ode',           mode = { 'n', 'x' } },
 				{ '<leader>d', group = '[D]ocument' },
 				{ '<leader>r', group = '[R]ename' },
 				{ '<leader>s', group = '[S]earch' },
-				{ '<leader>t', group = '[T]oggle/[T]ab' },
+				{ '<leader>t', group = '[T]oggle or [T]ab' },
 				{ '<leader>g', group = '[G]it' },
 				{ '<leader>l', group = '[L]SP' },
 			},

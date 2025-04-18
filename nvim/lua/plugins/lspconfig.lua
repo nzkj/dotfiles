@@ -1,4 +1,17 @@
 return {
+  -- Configures Lua LSP for your Neovim config, runtime and plugins
+  -- used for completion, annotations and signatures of Neovim apis
+  {
+    'folke/lazydev.nvim',
+    ft = 'lua',
+    opts = {
+      library = {
+        -- Load luvit types when the `vim.uv` word is found
+        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+      },
+    },
+  },
+
   -- Package manager for LSPs, DAP, linters, formatters, etc.
   {
     "williamboman/mason.nvim",
@@ -47,22 +60,18 @@ return {
         capabilities = capabilities
       })
 
-      vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
-      vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
       vim.keymap.set('n', '<leader>d', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
-      vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
 
       -- Note: See telescope.lua for more LSP keymaps (e.g. <leader>gr for references)
-      vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { desc = '[G]oto [D]efinition' })
-      vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, { desc = '[G]oto [D]eclaration' })
-      vim.keymap.set('n', 'gI', vim.lsp.buf.implementation, { desc = '[G]oto [I]mplementation' })
-
-      vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, { desc = '[R]e[n]ame' })
-      vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, { desc = '[C]ode [A]ction' })
+      vim.keymap.set('n', 'grd', vim.lsp.buf.definition, { desc = '[G]oto [D]efinition' })
+      vim.keymap.set('n', 'grD', vim.lsp.buf.declaration, { desc = '[G]oto [D]eclaration' })
+      vim.keymap.set('n', 'gri', vim.lsp.buf.implementation, { desc = '[G]oto [I]mplementation' })
+      vim.keymap.set('n', 'grn', vim.lsp.buf.rename, { desc = '[R]e[n]ame' })
+      vim.keymap.set('n', 'gra', vim.lsp.buf.code_action, { desc = '[G]oto Code [A]ction' })
 
       vim.keymap.set('n', 'K', vim.lsp.buf.hover, { desc = 'Hover Documentation' })
       vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, { desc = 'Signature Documentation' })
-      vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, { desc = 'Type [D]efinition' })
+      vim.keymap.set('n', 'grt', vim.lsp.buf.type_definition, { desc = '[G]oto [T]ype Definition' })
 
       -- TODO: Use LspAttach hook instead of global keymap
       vim.keymap.set('n', '<leader>ls', '<Cmd>ClangdSwitchSourceHeader<CR>', { desc = '[L]SP [S]witch Source Header' })
