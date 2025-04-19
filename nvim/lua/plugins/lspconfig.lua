@@ -34,9 +34,10 @@ return {
 
 				map("K", vim.lsp.buf.hover, "Hover Documentation")
 				map("<C-k>", vim.lsp.buf.signature_help, "Signature Documentation")
+				map("<leader>d", vim.diagnostic.open_float, "Open diagnostic message")
 
 				-- TODO: Only enable for clangd
-				map("gls", "<cmd>ClangdSwitchSourceHearder<cr>", "[L]SP [S]witch Source Header")
+				map("gls", "<cmd>ClangdSwitchSourceHeader<cr>", "[L]SP [S]witch Source Header")
 
 				-- Highlight references of the word under your cursor
 				-- When you move your cursor, the highlights will be cleared
@@ -111,6 +112,7 @@ return {
 			pyright = {},
 			rust_analyzer = {},
 			ts_ls = {},
+			clangd = {},
 			lua_ls = {
 				settings = {
 					Lua = {

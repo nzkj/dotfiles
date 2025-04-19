@@ -7,6 +7,7 @@ return {
 		"folke/which-key.nvim",
 		event = "VimEnter",
 		opts = {
+			delay = 0,
 			icons = {
 				mappings = false,
 			},
@@ -15,7 +16,6 @@ return {
 			},
 			spec = {
 				{ "<leader>c", group = "[C]ode", mode = { "n", "x" } },
-				{ "<leader>d", group = "[D]ocument" },
 				{ "<leader>r", group = "[R]ename" },
 				{ "<leader>s", group = "[S]earch" },
 				{ "<leader>t", group = "[T]oggle or [T]ab" },

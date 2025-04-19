@@ -25,6 +25,8 @@ return {
 				"markdown",
 				"markdown_inline",
 				"html",
+				-- Highlights TODO, NOTE, FIX, HACK, FIXME, BUG etc.
+				"comment",
 			},
 
 			-- Autoinstall languages that are not installed
