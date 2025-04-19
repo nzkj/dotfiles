@@ -1,10 +1,6 @@
--- Miscellaneous plugins
 return {
 	-- Detect tabstop and shiftwidth automatically
 	{ "tpope/vim-sleuth" },
-
-	-- Enable editing surroundings
-	{ "tpope/vim-surround" },
 
 	-- Useful plugin to show you pending keymaps
 	{
@@ -57,6 +53,26 @@ return {
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 	},
 
-	-- Highlight the current word under the cursor
-	-- { 'RRethy/vim-illuminate' },
+	-- Status line
+	{
+		"nvim-lualine/lualine.nvim",
+		opts = {
+			options = {
+				icons_enabled = false,
+				theme = "gruvbox-material",
+				component_separators = "|",
+				section_separators = "",
+			},
+		},
+	},
+
+	-- Markdown Previewer
+	{
+		"iamcco/markdown-preview.nvim",
+		cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+		ft = { "markdown" },
+		build = function()
+			vim.fn["mkdp#util#install"]()
+		end,
+	},
 }

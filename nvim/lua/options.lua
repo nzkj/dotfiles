@@ -20,10 +20,6 @@ vim.schedule(function()
 	vim.opt.clipboard = "unnamedplus"
 end)
 
--- If performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
--- instead raise a dialog asking if you wish to save the current file(s)
-vim.opt.confirm = true
-
 -- Enable break indent
 vim.o.breakindent = true
 
@@ -55,7 +51,7 @@ vim.o.termguicolors = true
 -- Enable relative line numbers
 vim.o.relativenumber = true
 
--- Enable GitHub copilot tab completion
+-- Enable GitHub copilot C-y completion
 vim.g.copilot_assume_mapped = true
 vim.g.copilot_no_tab_map = true
 vim.keymap.set("i", "<C-y>", 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
@@ -143,7 +139,6 @@ vim.keymap.set(
 
 -- Close tab
 vim.keymap.set("n", "<leader>tc", ":tabclose<CR>", { desc = "[T]ab [C]lose", silent = true })
-vim.keymap.set("n", "<leader>tq", ":cclose<CR>", { desc = "[T]ab [C]lose", silent = true })
 
 -- Toggle the quickfix
 vim.keymap.set("n", "<leader>q", function()
