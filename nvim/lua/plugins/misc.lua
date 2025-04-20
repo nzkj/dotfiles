@@ -7,7 +7,7 @@ return {
 		"folke/which-key.nvim",
 		event = "VimEnter",
 		opts = {
-			delay = 0,
+			delay = 100,
 			icons = {
 				mappings = false,
 			},

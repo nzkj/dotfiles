@@ -76,6 +76,7 @@ return {
 
 		-- Diagnostic Config
 		-- See :help vim.diagnostic.Opts
+		local virtual_lines_enabled = true
 		vim.diagnostic.config({
 			severity_sort = true,
 			float = { border = "rounded", source = "if_many" },
@@ -93,7 +94,20 @@ return {
 					return diagnostic_message[diagnostic.severity]
 				end,
 			},
+			-- Only show virtual line diagnostics for the current cursor line
+			virtual_lines = {
+				current_line = virtual_lines_enabled,
+			},
 		})
+
+		function ToggleVirtualLinesCurrentLine()
+			virtual_lines_enabled = not virtual_lines_enabled
+			vim.diagnostic.config({
+				virtual_lines = virtual_lines_enabled and { current_line = true } or false,
+			})
+			print("Virtual lines (current line): " .. (virtual_lines_enabled and "enabled" or "disabled"))
+		end
+		vim.keymap.set("n", "<leader>tv", ToggleVirtualLinesCurrentLine, { desc = "[T]oggle [V]irtual Current Line" })
 
 		-- LSP servers and clients are able to communicate to each other what features they support.
 		--  By default, Neovim doesn't support everything that is in the LSP specification.

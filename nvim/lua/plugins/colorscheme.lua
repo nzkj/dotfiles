@@ -15,6 +15,9 @@ return {
 		vim.cmd("highlight WhichKeyBorder guifg=#473c29")
 		vim.cmd("highlight WhichKeyNormal guifg=#473c29")
 		vim.cmd("highlight WhichKeyTitle guifg=#fabd2f")
+		-- TODO: This looks cool for diagnostics, but makes the completion look worse...
+		-- vim.cmd("highlight FloatBorder guibg=NONE")
+		-- vim.cmd("highlight NormalFloat guibg=NONE")
 	end,
 }
 
