@@ -22,9 +22,6 @@ return {
 				map("grr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
 				map("gri", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
 
-				-- Override the less-sane defaults:
-				-- * "gd" originally "go to definition of word under the cursor in current function"
-				-- * "gD" originally "go to definition of word under the cursor in current file"
 				map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
 				map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
@@ -39,33 +36,8 @@ return {
 				-- TODO: Only enable for clangd
 				map("gls", "<cmd>ClangdSwitchSourceHeader<cr>", "[L]SP [S]witch Source Header")
 
-				-- Highlight references of the word under your cursor
-				-- When you move your cursor, the highlights will be cleared
-				local client = vim.lsp.get_client_by_id(event.data.client_id)
-				if client then
-					local highlight_augroup = vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
-					vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-						buffer = event.buf,
-						group = highlight_augroup,
-						callback = vim.lsp.buf.document_highlight,
-					})
-
-					vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-						buffer = event.buf,
-						group = highlight_augroup,
-						callback = vim.lsp.buf.clear_references,
-					})
-
-					vim.api.nvim_create_autocmd("LspDetach", {
-						group = vim.api.nvim_create_augroup("kickstart-lsp-detach", { clear = true }),
-						callback = function(event2)
-							vim.lsp.buf.clear_references()
-							vim.api.nvim_clear_autocmds({ group = "kickstart-lsp-highlight", buffer = event2.buf })
-						end,
-					})
-				end
-
 				-- Toggle inlay hints keymap
+				local client = vim.lsp.get_client_by_id(event.data.client_id)
 				if client then
 					map("<leader>th", function()
 						vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
@@ -76,7 +48,6 @@ return {
 
 		-- Diagnostic Config
 		-- See :help vim.diagnostic.Opts
-		local virtual_lines_enabled = true
 		vim.diagnostic.config({
 			severity_sort = true,
 			float = { border = "rounded", source = "if_many" },
@@ -94,34 +65,11 @@ return {
 					return diagnostic_message[diagnostic.severity]
 				end,
 			},
-			-- Only show virtual line diagnostics for the current cursor line
-			virtual_lines = {
-				current_line = virtual_lines_enabled,
-			},
 		})
 
-		function ToggleVirtualLinesCurrentLine()
-			virtual_lines_enabled = not virtual_lines_enabled
-			vim.diagnostic.config({
-				virtual_lines = virtual_lines_enabled and { current_line = true } or false,
-			})
-			print("Virtual lines (current line): " .. (virtual_lines_enabled and "enabled" or "disabled"))
-		end
-		vim.keymap.set("n", "<leader>tv", ToggleVirtualLinesCurrentLine, { desc = "[T]oggle [V]irtual Current Line" })
-
-		-- LSP servers and clients are able to communicate to each other what features they support.
-		--  By default, Neovim doesn't support everything that is in the LSP specification.
-		--  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
-		--  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
 		local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 		-- Enable the following language servers
-		--  Add any additional override configuration in the following tables. Available keys are:
-		--  - cmd (table): Override the default command used to start the server
-		--  - filetypes (table): Override the default list of associated filetypes for the server
-		--  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
-		--  - settings (table): Override the default settings passed when initializing the server.
-		--        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
 		local servers = {
 			pyright = {},
 			rust_analyzer = {},
@@ -133,8 +81,6 @@ return {
 						completion = {
 							callSnippet = "Replace",
 						},
-						-- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-						-- diagnostics = { disable = { 'missing-fields' } },
 					},
 				},
 			},
@@ -142,7 +88,7 @@ return {
 
 		local ensure_installed = vim.tbl_keys(servers or {})
 		vim.list_extend(ensure_installed, {
-			"stylua", -- Used to format Lua code
+			"stylua",
 		})
 		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 

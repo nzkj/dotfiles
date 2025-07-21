@@ -51,11 +51,6 @@ vim.o.termguicolors = true
 -- Enable relative line numbers
 vim.o.relativenumber = true
 
--- Enable GitHub copilot C-y completion
-vim.g.copilot_assume_mapped = true
-vim.g.copilot_no_tab_map = true
-vim.keymap.set("i", "<C-y>", 'copilot#Accept("\\<CR>")', { expr = true, replace_keycodes = false })
-
 -- Enable spell checking
 vim.o.spell = true
 vim.o.spelloptions = "camel"
@@ -69,6 +64,10 @@ vim.opt.swapfile = false
 
 -- Improve visual block mode
 vim.opt.virtualedit = "block"
+
+-- Disable mouse pop-up for disabling
+vim.api.nvim_command("aunmenu PopUp.How-to\\ disable\\ mouse")
+vim.api.nvim_command("aunmenu PopUp.-1-")
 
 -------------------
 -- Auto Commands --

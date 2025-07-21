@@ -4,9 +4,6 @@ return {
 	{ "tpope/vim-fugitive" },
 	{ "tpope/vim-rhubarb" },
 
-	-- GitHub AI completion
-	-- { 'github/copilot.vim' },
-
 	-- Git signs in the sign column
 	{
 		"lewis6991/gitsigns.nvim",
