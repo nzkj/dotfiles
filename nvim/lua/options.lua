@@ -73,6 +73,23 @@ vim.api.nvim_command("aunmenu PopUp.-1-")
 -- Auto Commands --
 -------------------
 
+-- End the snippet engine when we escape insert mode, so we can't erroneously
+-- snippet_forward (Tab) or snippet_backward (S-Tab) when we re-enter insert mode elsewhere!
+-- This prevents jumping to stale locations.
+-- See: https://github.com/L3MON4D3/LuaSnip/issues/258#issuecomment-1429989436
+vim.api.nvim_create_autocmd("ModeChanged", {
+	pattern = "*",
+	callback = function()
+		if
+			((vim.v.event.old_mode == "s" and vim.v.event.new_mode == "n") or vim.v.event.old_mode == "i")
+			and require("luasnip").session.current_nodes[vim.api.nvim_get_current_buf()]
+			and not require("luasnip").session.jump_active
+		then
+			require("luasnip").unlink_current()
+		end
+	end,
+})
+
 -- Highlight on yank
 vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight when yanking text",
