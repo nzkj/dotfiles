@@ -72,6 +72,7 @@ return {
 		-- Enable the following language servers
 		local servers = {
 			pyright = {},
+			ruff = {},
 			rust_analyzer = {},
 			ts_ls = {},
 			clangd = {},
@@ -80,6 +81,9 @@ return {
 					Lua = {
 						completion = {
 							callSnippet = "Replace",
+						},
+						hint = {
+							enable = true,
 						},
 					},
 				},
