@@ -165,7 +165,20 @@ vim.keymap.set("n", "<leader>q", function()
 		end
 	end
 	vim.cmd("copen")
-end, { desc = "Toggle Quickfix" })
+end, { desc = "[T]oggle [Q]uickfix" })
+
+-- Toggle diagnostics
+local diagnostics_enabled = true
+vim.keymap.set("n", "<leader>td", function()
+	diagnostics_enabled = not diagnostics_enabled
+	if diagnostics_enabled then
+		vim.diagnostic.enable()
+		print("Diagnostics enabled")
+	else
+		vim.diagnostic.disable()
+		print("Diagnostics disabled")
+	end
+end, { desc = "[T]oggle [D]iagnostics" })
 
 -- Switch between splits using Ctrl + arrow keys
 vim.keymap.set("n", "<C-Up>", "<C-w>k", { noremap = true, silent = true })
