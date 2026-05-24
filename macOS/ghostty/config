@@ -1,0 +1,12 @@
+font-family = Hack Nerd Font Mono
+font-size = 15
+
+theme = Gruvbox Material
+
+background-opacity = 0.9
+window-padding-x = 10
+window-padding-y = 10
+macos-titlebar-style = hidden
+macos-option-as-alt = true
+
+keybind = shift+enter=text:\x1b\r
