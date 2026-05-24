@@ -1,0 +1,23 @@
+[env]
+TERM                  = "xterm-256color"
+
+[font]
+normal                = { family = "Hack Nerd Font Mono", style = "Regular" }
+bold                  = { family = "Hack Nerd Font Mono", style = "Bold" }
+italic                = { family = "Hack Nerd Font Mono", style = "Italic" }
+bold_italic           = { family = "Hack Nerd Font Mono", style = "Bold Italic" }
+size                  = 15
+
+
+# Treat Option (Alt) as Meta in macOS
+[window]
+opacity = 0.9
+decorations = "buttonless"
+padding = { x = 10, y = 10 }
+option_as_alt = "Both"
+
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001B\r"
