@@ -1,0 +1,312 @@
+#!/usr/bin/env zsh
+# tms — pick or create a tmux session for a git worktree.
+#
+# One session per worktree. Repos live in ~/projects/<repo>; feature worktrees
+# live in ~/worktrees/<repo>/<branch>. Worktrees are enumerated via
+# `git worktree list --porcelain` (source of truth), not by scanning disk.
+
+emulate -L zsh
+setopt extended_glob no_aliases
+
+PROJECTS_ROOT="${HOME}/projects"
+WORKTREES_ROOT="${HOME}/worktrees"
+
+die() { print -u2 -- "tms: $*"; exit 1; }
+
+# --- tmux session lookup -----------------------------------------------------
+
+typeset -gA SESSIONS  # name -> "attached" | "detached"
+
+load_sessions() {
+    SESSIONS=()
+    local line name attached
+    while IFS=: read -r name attached; do
+        [[ -z "$name" ]] && continue
+        if [[ "$attached" -gt 0 ]]; then
+            SESSIONS[$name]="attached"
+        else
+            SESSIONS[$name]="detached"
+        fi
+    done < <(tmux list-sessions -F '#S:#{session_attached}' 2>/dev/null)
+}
+
+session_exists() {
+    tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq -- "$1"
+}
+
+# --- worktree discovery ------------------------------------------------------
+
+# Emit "id\tpath\tstate" lines for one repo: existing worktrees plus every
+# local branch that doesn't yet have a worktree (as a creation candidate).
+# Run as a background job per repo; writes are line-sized so concurrent
+# subshell output interleaves safely (< PIPE_BUF).
+discover_one() {
+    local repo_dir=$1
+    local repo_name=${repo_dir:t}
+    local -A seen_branches  # branches already emitted (worktree, local, or remote)
+    local wt_path="" branch="" line=""
+
+    # Step 1: existing worktrees (uses < <(...) so we stay in the current
+    # shell and seen_branches survives the loop).
+    while IFS= read -r line; do
+        if [[ -z "$line" ]]; then
+            if [[ -n "$wt_path" ]]; then
+                emit_entry "$repo_name" "$wt_path" "$branch" "$repo_dir"
+                [[ -n "$branch" ]] && seen_branches[$branch]=1
+            fi
+            wt_path=""; branch=""
+        elif [[ "$line" == "worktree "* ]]; then
+            wt_path=${line#worktree }
+        elif [[ "$line" == "branch refs/heads/"* ]]; then
+            branch=${line#branch refs/heads/}
+        fi
+    done < <({ git -C "$repo_dir" worktree list --porcelain 2>/dev/null; print -- ""; })
+
+    # Step 2: local branch candidates (only those without a worktree).
+    local br id wt_candidate
+    while IFS= read -r br; do
+        [[ -z "$br" ]] && continue
+        [[ -n "${seen_branches[$br]:-}" ]] && continue
+        seen_branches[$br]=1
+        id="${repo_name}/${br}"
+        wt_candidate="${WORKTREES_ROOT}/${repo_name}/${br}"
+        print -- "${id}\t${wt_candidate}\t${SESSIONS[$id]:-none}"
+    done < <(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+
+    # Step 3: remote-only branch candidates from origin. create_worktree
+    # will base a new local branch on origin/<branch> when picked.
+    while IFS= read -r br; do
+        [[ -z "$br" || "$br" == "HEAD" ]] && continue
+        [[ -n "${seen_branches[$br]:-}" ]] && continue
+        seen_branches[$br]=1
+        id="${repo_name}/${br}"
+        wt_candidate="${WORKTREES_ROOT}/${repo_name}/${br}"
+        print -- "${id}\t${wt_candidate}\t${SESSIONS[$id]:-none}"
+    done < <(git -C "$repo_dir" for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin/ 2>/dev/null)
+}
+
+# Fan out one git invocation per repo in parallel. Drops total cost from
+# ~O(N*git_fork) to ~O(git_fork) on a multi-core box.
+discover() {
+    local repo_dir
+    for repo_dir in "$PROJECTS_ROOT"/*(N/); do
+        # .git as a directory => main checkout. .git as a file => linked
+        # worktree of some other repo; skip so we don't double-iterate.
+        [[ -d "$repo_dir/.git" ]] || continue
+        discover_one "$repo_dir" &
+    done
+    wait
+}
+
+# Emit one worktree entry. Supported layouts:
+#   - main checkout: wt_path == ~/projects/<repo>           => id = <repo>
+#   - tms worktree:  wt_path under ~/worktrees/<repo>/      => id = <repo>/<branch>
+#   - sibling worktree in ~/projects/ (e.g. legacy layout)  => id = <repo>/<branch>
+# Anything else is skipped.
+emit_entry() {
+    local repo_name=$1 wt_path=$2 branch=$3 repo_dir=$4 id
+    if [[ "$wt_path" == "$repo_dir" ]]; then
+        id="$repo_name"
+    elif [[ "$wt_path" == "$WORKTREES_ROOT/$repo_name/"* ]]; then
+        if [[ -n "$branch" ]]; then
+            id="$repo_name/$branch"
+        else
+            id="$repo_name/${wt_path#$WORKTREES_ROOT/$repo_name/}"
+        fi
+    elif [[ "$wt_path" == "$PROJECTS_ROOT/"* && -n "$branch" ]]; then
+        id="$repo_name/$branch"
+    else
+        return 0
+    fi
+    print -- "${id}\t${wt_path}\t${SESSIONS[$id]:-none}"
+}
+
+state_marker() {
+    case "$1" in
+        attached) print -n -- "●" ;;
+        detached) print -n -- "○" ;;
+        *)        print -n -- "◌" ;;
+    esac
+}
+
+# --- picker ------------------------------------------------------------------
+
+# Build "display\tid\tpath" lines and run fzf.
+# Output: query\n key\n selected_row (any may be empty).
+run_picker() {
+    local header_extra=$1
+    local rows entries header
+    entries=$(discover)
+    # Prepend a numeric state-priority field so attached → detached → none
+    # bubbles to the top in sorted order, then strip it back off.
+    local id_width=50
+    rows=$(print -r -- "$entries" | while IFS=$'\t' read -r id wt_path state; do
+        [[ -z "$id" ]] && continue
+        local display_path=${wt_path/#$HOME/\~} pri="" id_disp=$id
+        case "$state" in
+            attached) pri=0 ;;
+            detached) pri=1 ;;
+            *)        pri=2 ;;
+        esac
+        # Hard-truncate the id so the path column always starts at the same
+        # offset, no matter how long the branch name is.
+        (( ${#id_disp} > id_width )) && id_disp="${id_disp[1,id_width-1]}…"
+        printf '%d\t%s %-*s  %s\t%s\t%s\n' "$pri" "$(state_marker "$state")" "$id_width" "$id_disp" "$display_path" "$id" "$wt_path"
+    done | sort -t$'\t' -k1,1n -k3 | cut -d$'\t' -f2-)
+
+    header='enter: open  •  type <repo>/<branch> for a new worktree'
+    [[ -n "$header_extra" ]] && header="${header_extra}"$'\n'"${header}"
+
+    print -r -- "$rows" | fzf \
+        --with-nth=1 \
+        --delimiter=$'\t' \
+        --print-query \
+        --expect=enter \
+        --no-multi \
+        --bind 'tab:transform-query(printf %s {2})' \
+        --prompt='tms> ' \
+        --header="$header" \
+        --layout=reverse
+}
+
+# --- input handling ----------------------------------------------------------
+
+# Look up an existing worktree's path by id; empty string if not present.
+# Branch candidates emitted by discover have a would-be path that doesn't
+# exist on disk yet — filter those out so the caller falls through to
+# create_worktree.
+worktree_path_for() {
+    local id=$1 candidate
+    candidate=$(discover | awk -F'\t' -v id="$id" '$1==id{print $2; exit}')
+    [[ -d "$candidate" ]] && print -- "$candidate"
+}
+
+create_worktree() {
+    local repo=$1 branch=$2
+    local repo_dir="$PROJECTS_ROOT/$repo"
+    local wt_path="$WORKTREES_ROOT/$repo/$branch"
+    local -a git_cmd
+    if git -C "$repo_dir" show-ref --verify --quiet "refs/heads/$branch"; then
+        git_cmd=(git -C "$repo_dir" worktree add "$wt_path" "$branch")
+    elif git -C "$repo_dir" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git_cmd=(git -C "$repo_dir" worktree add -b "$branch" "$wt_path" "origin/$branch")
+    else
+        git_cmd=(git -C "$repo_dir" worktree add -b "$branch" "$wt_path")
+    fi
+
+    "${git_cmd[@]}" >/dev/null || return 1
+    print -r -- "$wt_path"
+}
+
+# --- session lifecycle -------------------------------------------------------
+
+ensure_session() {
+    local name=$1 wt_path=$2
+    if session_exists "$name"; then
+        return 0
+    fi
+    tmux new-session  -d -s "$name" -c "$wt_path" -n nvim   || return 1
+    tmux send-keys    -t "${name}:nvim" 'nvim' Enter
+    tmux new-window   -t "${name}:" -c "$wt_path" -n term
+    tmux new-window   -t "${name}:" -c "$wt_path" -n claude
+    tmux send-keys    -t "${name}:claude" 'claude' Enter
+    tmux select-window -t "${name}:term"
+}
+
+enter_session() {
+    local name=$1
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$name"
+    else
+        tmux attach -t "$name"
+    fi
+}
+
+# --- main --------------------------------------------------------------------
+
+main() {
+    command -v tmux >/dev/null || die "tmux not found"
+    command -v git  >/dev/null || die "git not found"
+    command -v fzf  >/dev/null || die "fzf not found"
+    [[ -d "$PROJECTS_ROOT" ]]  || die "$PROJECTS_ROOT does not exist"
+
+    load_sessions
+
+    local id wt_path header_msg=""
+    while true; do
+        local picker_out
+        picker_out=$(run_picker "$header_msg")
+
+        local query key selected rest
+        query=${picker_out%%$'\n'*}
+        rest=${picker_out#*$'\n'}
+        key=${rest%%$'\n'*}
+        if [[ "$rest" == *$'\n'* ]]; then
+            selected=${rest#*$'\n'}
+        else
+            selected=""
+        fi
+
+        # Cancellation: Esc / Ctrl-C => key is empty.
+        [[ "$key" != "enter" ]] && exit 0
+
+        if [[ -n "$selected" ]]; then
+            # Row format: <display>\t<id>\t<wt_path>
+            local sel_rest=${selected#*$'\t'}
+            id=${sel_rest%%$'\t'*}
+            wt_path=${sel_rest#*$'\t'}
+            if [[ -d "$wt_path" ]]; then
+                break
+            fi
+            # Branch candidate: worktree doesn't exist yet — create it.
+            local sel_repo=${id%%/*} sel_branch=${id#*/}
+            if create_worktree "$sel_repo" "$sel_branch" >/dev/null; then
+                break
+            fi
+            header_msg="✗ worktree creation aborted or failed"
+            continue
+        fi
+
+        # Typed entry with no match — resolve from the query.
+        local typed=$query
+        [[ -z "$typed" ]] && exit 0
+
+        if [[ "$typed" != */* ]]; then
+            if [[ -e "$PROJECTS_ROOT/$typed/.git" ]]; then
+                id=$typed
+                wt_path="$PROJECTS_ROOT/$typed"
+                break
+            fi
+            header_msg="✗ '$typed' is not a known repo. Use <repo>/<branch>."
+            continue
+        fi
+
+        local repo=${typed%%/*}
+        local branch=${typed#*/}
+        if [[ ! -e "$PROJECTS_ROOT/$repo/.git" ]]; then
+            header_msg="✗ repo '$repo' not found in ~/projects"
+            continue
+        fi
+
+        local existing
+        existing=$(worktree_path_for "$typed")
+        if [[ -n "$existing" ]]; then
+            id=$typed
+            wt_path=$existing
+            break
+        fi
+
+        # New worktree: confirm + create.
+        if create_worktree "$repo" "$branch" >/dev/null; then
+            id=$typed
+            wt_path="$WORKTREES_ROOT/$repo/$branch"
+            break
+        fi
+        header_msg="✗ worktree creation aborted or failed"
+    done
+
+    ensure_session "$id" "$wt_path" || die "failed to create session '$id'"
+    enter_session  "$id"
+}
+
+main "$@"
