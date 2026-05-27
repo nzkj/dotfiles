@@ -1,0 +1,282 @@
+#!/usr/bin/env zsh
+# claudes — pick a running Claude Code instance and switch to it.
+#
+# Source of truth is `~/.claude/sessions/<pid>.json`: claude itself writes
+# one of these per live process, with the cwd, sessionId, status, and
+# updatedAt. We map each pid to a tmux pane via its ppid (claude's parent
+# is the shell that the pane is running).
+#
+# State:
+#   ? pending  — claude is blocked on the user (permission prompt or
+#                AskUserQuestion). Detected via a marker file at
+#                ~/.claude/sessions/<sessionId>.pending, written by hooks
+#                in ~/.claude/settings.json (Notification +
+#                PreToolUse:AskUserQuestion) and cleared by Stop /
+#                UserPromptSubmit / PostToolUse:AskUserQuestion.
+#   ▶ running  — claude reports status == "busy" and no pending marker
+#   ✓ idle     — claude reports anything else
+#   ⌧ no-tmux  — claude is alive but not running inside any tmux pane
+#
+# Sort order: pending > running > idle > no-tmux, newer updatedAt first
+# within each bucket.
+#
+# The picker auto-refreshes every second via fzf --listen + a background
+# poller that POSTs `reload($SCRIPT --list)` to the fzf control endpoint.
+# Sessions starting, finishing, or flipping to pending appear in the
+# already-open picker without reopening it.
+
+emulate -L zsh
+setopt extended_glob no_aliases
+
+SESSIONS_DIR="${HOME}/.claude/sessions"
+PROJECTS_ROOT="${HOME}/projects"
+WORKTREES_ROOT="${HOME}/worktrees"
+
+# Resolve the path used to re-invoke ourselves for `--list` from inside the
+# fzf reload binding. When invoked via a path ($0 contains '/'), :A resolves
+# it absolutely (with symlinks). When invoked bare from PATH, fall back to
+# `whence -p`.
+if [[ "$0" == */* ]]; then
+    SCRIPT=${0:A}
+else
+    SCRIPT=$(whence -p "$0" 2>/dev/null || print -- "$0")
+fi
+
+die() { print -u2 -- "claudes: $*"; exit 1; }
+
+# --- pane lookup -------------------------------------------------------------
+
+# Build a one-time map shell_pid -> "pane_id\tsession\twindow_index". Each
+# claude process's ppid is exactly the shell running in some tmux pane, so a
+# single tmux call resolves all instances.
+typeset -gA PANE_BY_PID
+
+load_pane_map() {
+    PANE_BY_PID=()
+    local pid pane sess widx
+    while IFS=$'\t' read -r pid pane sess widx; do
+        [[ -z "$pid" ]] && continue
+        PANE_BY_PID[$pid]="${pane}"$'\t'"${sess}"$'\t'"${widx}"
+    done < <(tmux list-panes -a -F '#{pane_pid}'$'\t''#{pane_id}'$'\t''#{session_name}'$'\t''#{window_index}' 2>/dev/null)
+}
+
+# --- display id --------------------------------------------------------------
+
+# Turn a cwd into the tms-style identifier so the label matches what the
+# user already thinks of these sessions as. Anything outside the two known
+# roots falls back to ~-collapsed path.
+id_from_cwd() {
+    local cwd=$1
+    if [[ "$cwd" == "$WORKTREES_ROOT"/*/* ]]; then
+        print -- "${cwd#$WORKTREES_ROOT/}"
+    elif [[ "$cwd" == "$PROJECTS_ROOT"/* ]]; then
+        local rest=${cwd#$PROJECTS_ROOT/}
+        print -- "${rest%%/*}"
+    else
+        print -- "${cwd/#$HOME/~}"
+    fi
+}
+
+# --- state -------------------------------------------------------------------
+
+state_marker() {
+    case "$1" in
+        pending) print -n -- "?" ;;
+        running) print -n -- "▶" ;;
+        idle)    print -n -- "✓" ;;
+        no-tmux) print -n -- "⌧" ;;
+    esac
+}
+
+# Drop .pending marker files that have outlived their truth.
+#
+# Two cases:
+#   1. Session is gone (json missing or pid dead) — marker is dead weight.
+#   2. Session is alive but no longer busy, and its json has been updated
+#      more recently than the marker. A clear hook (Stop / UserPromptSubmit
+#      / PostToolUse:AskUserQuestion) should have fired but evidently
+#      didn't — self-heal so a missed clear doesn't pin the session in
+#      `pending` forever.
+prune_stale_markers() {
+    typeset -A live_status live_updated_ms
+    local f pid sid sstatus updated
+    for f in "$SESSIONS_DIR"/*.json(N); do
+        IFS=$'\t' read -r pid sid sstatus updated <<<"$(jq -r '[.pid, .sessionId, .status, (.updatedAt // 0)] | @tsv' "$f" 2>/dev/null)"
+        [[ -z "$pid" || -z "$sid" ]] && continue
+        kill -0 "$pid" 2>/dev/null || continue
+        live_status[$sid]=$sstatus
+        live_updated_ms[$sid]=$updated
+    done
+    local marker msid mtime
+    for marker in "$SESSIONS_DIR"/*.pending(N); do
+        msid=${${marker:t}%.pending}
+        if [[ -z "${live_status[$msid]:-}" ]]; then
+            rm -f "$marker"
+        elif [[ "${live_status[$msid]}" != "busy" ]]; then
+            mtime=$(stat -f %m "$marker" 2>/dev/null) || continue
+            (( ${live_updated_ms[$msid]} / 1000 > mtime )) && rm -f "$marker"
+        fi
+    done
+}
+
+# --- row generation ----------------------------------------------------------
+
+# Emit fzf input rows. Called once at startup (via the `start:reload` bind)
+# and once per second thereafter (via the poller). Each call rebuilds the
+# pane map and prunes stale markers so the data reflects the current world.
+print_rows() {
+    load_pane_map
+    prune_stale_markers
+
+    local id_width=42
+    local pid="" sid="" cwd="" claude_status="" updated="" fields=""
+    local pane_id="" sess="" widx="" target="" ppid=""
+    local state="" pri="" id_disp="" updated_s="" cap_lines=""
+    {
+        for f in "$SESSIONS_DIR"/*.json(N); do
+            fields=$(jq -r '[.pid, .sessionId, .cwd, .status, (.updatedAt // 0)] | @tsv' "$f" 2>/dev/null) || continue
+            IFS=$'\t' read -r pid sid cwd claude_status updated <<<"$fields"
+            [[ -z "$pid" ]] && continue
+            kill -0 "$pid" 2>/dev/null || continue
+
+            pane_id=""; sess=""; widx=""; target=""
+            ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+            if [[ -n "$ppid" && -n "${PANE_BY_PID[$ppid]:-}" ]]; then
+                IFS=$'\t' read -r pane_id sess widx <<<"${PANE_BY_PID[$ppid]}"
+                target="${sess}:${widx}"
+            fi
+
+            if [[ -z "$target" ]]; then
+                state=no-tmux; pri=3
+            elif [[ -f "$SESSIONS_DIR/${sid}.pending" ]]; then
+                state=pending;  pri=0
+            elif [[ "$claude_status" == "busy" ]]; then
+                state=running;  pri=1
+            else
+                state=idle;     pri=2
+            fi
+
+            id_disp=$(id_from_cwd "$cwd")
+            (( ${#id_disp} > id_width )) && id_disp="${id_disp[1,id_width-1]}…"
+
+            # Capture line count up front so fzf can scroll the preview to the
+            # bottom on focus via `+{cap_lines}-/1` (= cap_lines minus preview
+            # height). Count to the LAST NON-BLANK line — tmux pads the visible
+            # portion of the pane with trailing blanks, and counting them too
+            # would scroll past the real content into empty space.
+            if [[ -n "$pane_id" ]]; then
+                cap_lines=$(tmux capture-pane -t "$pane_id" -p -S - 2>/dev/null | awk 'NF{n=NR} END{print n+0}')
+            else
+                cap_lines=0
+            fi
+
+            # updatedAt is milliseconds; collapse to seconds for the sort key.
+            updated_s=$(( updated / 1000 ))
+            printf '%d\t%010d\t%s %-*s  %-7s\t%s\t%s\t%s\t%s\n' \
+                "$pri" "$(( 9999999999 - updated_s ))" \
+                "$(state_marker "$state")" "$id_width" "$id_disp" "$state" \
+                "${pane_id:-NONE}" "${target:-NONE}" "$pid" "$cap_lines"
+        done
+    } | sort -t$'\t' -k1,1n -k2,2n | cut -d$'\t' -f3-
+}
+
+# --- main --------------------------------------------------------------------
+
+main() {
+    command -v tmux >/dev/null || die "tmux not found"
+    command -v fzf  >/dev/null || die "fzf not found"
+    command -v jq   >/dev/null || die "jq not found"
+    command -v curl >/dev/null || die "curl not found"
+    [[ -d "$SESSIONS_DIR" ]]   || die "$SESSIONS_DIR does not exist"
+
+    # Preview chooses based on whether the row has a real tmux target.
+    # {2} is pane_id (or NONE), {4} is the pid (always present).
+    # `-S -` captures the full scrollback (not just the visible screen).
+    # Preview is placed below the list so it gets the terminal's full width,
+    # which is the closest match to the source pane's width — important
+    # because box-drawing chars in claude's UI only line up at matching width.
+    local preview_cmd='if [ "{2}" = "NONE" ]; then jq . '"$SESSIONS_DIR"'/{4}.json; else tmux capture-pane -t {2} -p -e -S -; fi'
+
+    # Hoisted (not local) so the EXIT trap — which fires after main() has
+    # returned and locals have been torn down — still sees them.
+    typeset -g CLAUDES_PORT_FILE CLAUDES_SEL_FILE CLAUDES_POLLER_PID
+    CLAUDES_PORT_FILE=$(mktemp -t claudes-port.XXXXXX)
+    CLAUDES_SEL_FILE=$(mktemp -t claudes-sel.XXXXXX)
+    CLAUDES_POLLER_PID=""
+
+    cleanup() {
+        [[ -n "$CLAUDES_POLLER_PID" ]] && kill "$CLAUDES_POLLER_PID" 2>/dev/null
+        rm -f "$CLAUDES_PORT_FILE" "$CLAUDES_SEL_FILE"
+    }
+    trap cleanup EXIT INT TERM
+
+    # Start the poller before fzf so fzf can run in the foreground and own
+    # the terminal cleanly — backgrounding fzf made the tty handoff on Esc
+    # flaky (parent shell wouldn't accept input until another key arrived).
+    # The poller waits for fzf to publish its port via the `start` bind
+    # below, then POSTs a `reload` every second until the curl call fails
+    # (which happens once fzf exits and the listener is gone).
+    (
+        local port="" tries=0
+        while [[ -z "$port" ]] && (( tries++ < 100 )); do
+            sleep 0.05
+            [[ -s "$CLAUDES_PORT_FILE" ]] && port=$(<"$CLAUDES_PORT_FILE")
+        done
+        [[ -z "$port" ]] && exit 0
+        while sleep 1; do
+            curl -s --max-time 1 "localhost:$port" \
+                -d "reload($SCRIPT --list)" >/dev/null 2>&1 || break
+        done
+    ) &
+    CLAUDES_POLLER_PID=$!
+
+    # fzf reads from /dev/tty regardless of stdin, so redirecting stdin
+    # from /dev/null and stdout to a file is safe — the user still
+    # interacts normally. The `start` bind loads the initial rows and
+    # writes the kernel-picked port to a tempfile for the poller above.
+    fzf --listen 0 \
+        --ansi \
+        --with-nth=1 \
+        --delimiter=$'\t' \
+        --no-multi \
+        --cycle \
+        --scheme=path \
+        --prompt='claudes> ' \
+        --header='enter: switch  •  ? pending  ▶ running  ✓ idle  ⌧ no-tmux  •  auto-refresh 1s' \
+        --preview="$preview_cmd" \
+        --preview-window='down,70%,+{5}-/1' \
+        --layout=reverse \
+        --bind "start:reload($SCRIPT --list)+execute-silent(echo \$FZF_PORT > $CLAUDES_PORT_FILE)" \
+        < /dev/null > "$CLAUDES_SEL_FILE"
+
+    local selected
+    selected=$(<"$CLAUDES_SEL_FILE")
+
+    [[ -z "$selected" ]] && exit 0
+
+    # Row format after cut: <display>\t<pane_id>\t<target>\t<pid>\t<cap_lines>
+    local rest=${selected#*$'\t'}                  # strip display
+    local pane_id=${rest%%$'\t'*}; rest=${rest#*$'\t'}
+    local target=${rest%%$'\t'*};  rest=${rest#*$'\t'}
+    local pid=${rest%%$'\t'*}
+
+    if [[ "$target" == "NONE" ]]; then
+        die "pid $pid is running outside tmux — nothing to switch to"
+    fi
+
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$target" || die "switch-client failed"
+    else
+        tmux select-window -t "$target"
+        tmux attach -t "${target%%:*}"
+    fi
+}
+
+# --- entry -------------------------------------------------------------------
+
+if [[ "${1:-}" == "--list" ]]; then
+    print_rows
+    exit 0
+fi
+
+main "$@"

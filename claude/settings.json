@@ -1,0 +1,35 @@
+{
+  "model": "opus[1m]",
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true
+  },
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Processing"
+    ]
+  },
+  "effortLevel": "high",
+  "skipAutoPermissionPrompt": true,
+  "hooks": {
+      "Notification": [
+        { "hooks": [ { "type": "command", "command": "~/.claude/hooks/state-track.sh set" } ] }
+      ],
+      "PreToolUse": [
+        { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "~/.claude/hooks/state-track.sh set" } ] }
+      ],
+      "PostToolUse": [
+        { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "~/.claude/hooks/state-track.sh clear" } ] }
+      ],
+      "UserPromptSubmit": [
+        { "hooks": [ { "type": "command", "command": "~/.claude/hooks/state-track.sh clear" } ] }
+      ],
+      "Stop": [
+        { "hooks": [ { "type": "command", "command": "~/.claude/hooks/state-track.sh clear" } ] }
+      ]
+    }
+}

@@ -163,6 +163,8 @@ run_picker() {
         --print-query \
         --expect=enter \
         --no-multi \
+        --cycle \
+        --scheme=path \
         --bind 'tab:transform-query(printf %s {2})' \
         --prompt='tms> ' \
         --header="$header" \
