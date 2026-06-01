@@ -134,8 +134,8 @@ print_rows() {
     local state="" pri="" id_disp="" updated_s="" cap_lines=""
     {
         for f in "$SESSIONS_DIR"/*.json(N); do
-            fields=$(jq -r '[.pid, .sessionId, .cwd, .status, (.updatedAt // 0)] | @tsv' "$f" 2>/dev/null) || continue
-            IFS=$'\t' read -r pid sid cwd claude_status updated <<<"$fields"
+            fields=$(jq -r '[.pid, .sessionId, .cwd, .status, (.updatedAt // 0), (.name // "<none>")] | @tsv' "$f" 2>/dev/null) || continue
+            IFS=$'\t' read -r pid sid cwd claude_status updated name <<<"$fields"
             [[ -z "$pid" ]] && continue
             kill -0 "$pid" 2>/dev/null || continue
 
@@ -172,9 +172,9 @@ print_rows() {
 
             # updatedAt is milliseconds; collapse to seconds for the sort key.
             updated_s=$(( updated / 1000 ))
-            printf '%d\t%010d\t%s %-*s  %-7s\t%s\t%s\t%s\t%s\n' \
+            printf '%d\t%010d\t%s %-*s  %-7s  %s\t%s\t%s\t%s\t%s\n' \
                 "$pri" "$(( 9999999999 - updated_s ))" \
-                "$(state_marker "$state")" "$id_width" "$id_disp" "$state" \
+                "$(state_marker "$state")" "$id_width" "$id_disp" "$state" "$name" \
                 "${pane_id:-NONE}" "${target:-NONE}" "$pid" "$cap_lines"
         done
     } | sort -t$'\t' -k1,1n -k2,2n | cut -d$'\t' -f3-
@@ -242,7 +242,6 @@ main() {
         --cycle \
         --scheme=path \
         --prompt='claudes> ' \
-        --header='enter: switch  •  ? pending  ▶ running  ✓ idle  ⌧ no-tmux  •  auto-refresh 1s' \
         --preview="$preview_cmd" \
         --preview-window='down,70%,+{5}-/1' \
         --layout=reverse \
@@ -263,6 +262,12 @@ main() {
     if [[ "$target" == "NONE" ]]; then
         die "pid $pid is running outside tmux — nothing to switch to"
     fi
+
+    # Target the pane explicitly: if another pane in the same window is
+    # zoomed, switching to just the window leaves the zoomed pane covering
+    # ours. select-pane auto-unzooms when the target pane differs from the
+    # zoomed one.
+    tmux select-pane -t "$pane_id" || die "select-pane failed"
 
     if [[ -n "${TMUX:-}" ]]; then
         tmux switch-client -t "$target" || die "switch-client failed"
