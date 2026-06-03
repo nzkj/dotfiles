@@ -151,13 +151,20 @@ run_picker() {
         # Hard-truncate the id so the path column always starts at the same
         # offset, no matter how long the branch name is.
         (( ${#id_disp} > id_width )) && id_disp="${id_disp[1,id_width-1]}…"
-        printf '%d\t%s %-*s  %s\t%s\t%s\n' "$pri" "$(state_marker "$state")" "$id_width" "$id_disp" "$display_path" "$id" "$wt_path"
+        local id_padded=$(printf '%-*s' "$id_width" "$id_disp")
+        local label="$(state_marker "$state") $id_padded"
+        case "$state" in
+            attached) label=$'\e[1;32m'"$label"$'\e[0m' ;;
+            detached) label=$'\e[32m'"$label"$'\e[0m' ;;
+        esac
+        printf '%d\t%s  %s\t%s\t%s\n' "$pri" "$label" "$display_path" "$id" "$wt_path"
     done | sort -t$'\t' -k1,1n -k3 | cut -d$'\t' -f2-)
 
     header='enter: open  •  type <repo>/<branch> for a new worktree'
     [[ -n "$header_extra" ]] && header="${header_extra}"$'\n'"${header}"
 
     print -r -- "$rows" | fzf \
+        --ansi \
         --with-nth=1 \
         --delimiter=$'\t' \
         --print-query \
