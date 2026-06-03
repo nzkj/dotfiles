@@ -129,14 +129,17 @@ print_rows() {
     prune_stale_markers
 
     local id_width=42
-    local pid="" sid="" cwd="" claude_status="" updated="" fields=""
+    local pid="" sid="" cwd="" claude_status="" updated="" kind="" fields=""
     local pane_id="" sess="" widx="" target="" ppid=""
     local state="" pri="" id_disp="" updated_s="" cap_lines=""
     {
         for f in "$SESSIONS_DIR"/*.json(N); do
-            fields=$(jq -r '[.pid, .sessionId, .cwd, .status, (.updatedAt // 0), (.name // "<none>")] | @tsv' "$f" 2>/dev/null) || continue
-            IFS=$'\t' read -r pid sid cwd claude_status updated name <<<"$fields"
+            fields=$(jq -r '[.pid, .sessionId, .cwd, .status, (.updatedAt // 0), (.name // "<none>"), (.kind // "interactive")] | @tsv' "$f" 2>/dev/null) || continue
+            IFS=$'\t' read -r pid sid cwd claude_status updated name kind <<<"$fields"
             [[ -z "$pid" ]] && continue
+            # Skip bg-spare daemon workers: they write session JSONs at startup
+            # but aren't user-facing — no tmux pane, never something to switch to.
+            [[ "$kind" == "bg" ]] && continue
             kill -0 "$pid" 2>/dev/null || continue
 
             pane_id=""; sess=""; widx=""; target=""
