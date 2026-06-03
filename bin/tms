@@ -46,9 +46,16 @@ discover_one() {
     local -A seen_branches  # branches already emitted (worktree, local, or remote)
     local wt_path="" branch="" line=""
 
-    # Step 1: existing worktrees (uses < <(...) so we stay in the current
-    # shell and seen_branches survives the loop).
-    while IFS= read -r line; do
+    # Fork both git invocations up front so they run concurrently. Output is
+    # buffered in the pipe (well under 64KB) so neither writer blocks while
+    # we drain the other. ~halves slowest-repo latency on a multi-core box.
+    local wt_fd refs_fd
+    exec {wt_fd}< <({ git -C "$repo_dir" worktree list --porcelain 2>/dev/null; print -- ""; })
+    exec {refs_fd}< <(git -C "$repo_dir" for-each-ref --format='%(refname)' refs/heads/ refs/remotes/origin/ 2>/dev/null)
+
+    # Step 1: existing worktrees. seen_branches survives the loop because
+    # we use read -u on an already-open FD rather than pipe-to-while.
+    while IFS= read -u $wt_fd -r line; do
         if [[ -z "$line" ]]; then
             if [[ -n "$wt_path" ]]; then
                 emit_entry "$repo_name" "$wt_path" "$branch" "$repo_dir"
@@ -60,29 +67,30 @@ discover_one() {
         elif [[ "$line" == "branch refs/heads/"* ]]; then
             branch=${line#branch refs/heads/}
         fi
-    done < <({ git -C "$repo_dir" worktree list --porcelain 2>/dev/null; print -- ""; })
+    done
+    exec {wt_fd}<&-
 
-    # Step 2: local branch candidates (only those without a worktree).
-    local br id wt_candidate
-    while IFS= read -r br; do
-        [[ -z "$br" ]] && continue
+    # Steps 2+3: local branch candidates, then remote-only branch candidates
+    # from origin (create_worktree will base a new local branch on
+    # origin/<branch> when one is picked). Parse the full refname to
+    # distinguish heads vs remotes/origin and dedupe against seen_branches.
+    local ref br id wt_candidate
+    while IFS= read -u $refs_fd -r ref; do
+        if [[ "$ref" == refs/heads/* ]]; then
+            br=${ref#refs/heads/}
+        elif [[ "$ref" == refs/remotes/origin/* ]]; then
+            br=${ref#refs/remotes/origin/}
+            [[ "$br" == HEAD ]] && continue
+        else
+            continue
+        fi
         [[ -n "${seen_branches[$br]:-}" ]] && continue
         seen_branches[$br]=1
         id="${repo_name}/${br}"
         wt_candidate="${WORKTREES_ROOT}/${repo_name}/${br}"
         print -- "${id}\t${wt_candidate}\t${SESSIONS[$id]:-none}"
-    done < <(git -C "$repo_dir" for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
-
-    # Step 3: remote-only branch candidates from origin. create_worktree
-    # will base a new local branch on origin/<branch> when picked.
-    while IFS= read -r br; do
-        [[ -z "$br" || "$br" == "HEAD" ]] && continue
-        [[ -n "${seen_branches[$br]:-}" ]] && continue
-        seen_branches[$br]=1
-        id="${repo_name}/${br}"
-        wt_candidate="${WORKTREES_ROOT}/${repo_name}/${br}"
-        print -- "${id}\t${wt_candidate}\t${SESSIONS[$id]:-none}"
-    done < <(git -C "$repo_dir" for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin/ 2>/dev/null)
+    done
+    exec {refs_fd}<&-
 }
 
 # Fan out one git invocation per repo in parallel. Drops total cost from
@@ -121,14 +129,6 @@ emit_entry() {
     print -- "${id}\t${wt_path}\t${SESSIONS[$id]:-none}"
 }
 
-state_marker() {
-    case "$1" in
-        attached) print -n -- "●" ;;
-        detached) print -n -- "○" ;;
-        *)        print -n -- "◌" ;;
-    esac
-}
-
 # --- picker ------------------------------------------------------------------
 
 # Build "display\tid\tpath" lines and run fzf.
@@ -140,23 +140,22 @@ run_picker() {
     # Prepend a numeric state-priority field so attached → detached → none
     # bubbles to the top in sorted order, then strip it back off.
     local id_width=50
+    # Format each entry inline — no $() per row (those forks dominate runtime
+    # for hundreds of rows). state_marker + padding are case + (r:N:).
     rows=$(print -r -- "$entries" | while IFS=$'\t' read -r id wt_path state; do
         [[ -z "$id" ]] && continue
-        local display_path=${wt_path/#$HOME/\~} pri="" id_disp=$id
+        # Every name gets an `=` — bare `local foo` in zsh prints the current
+        # value on re-entry through the loop, which would leak into the rows.
+        local display_path=${wt_path/#$HOME/\~} id_disp=$id pri="" marker="" pre="" post=""
         case "$state" in
-            attached) pri=0 ;;
-            detached) pri=1 ;;
-            *)        pri=2 ;;
+            attached) pri=0; marker='●'; pre=$'\e[1;32m'; post=$'\e[0m' ;;
+            detached) pri=1; marker='○'; pre=$'\e[32m';   post=$'\e[0m' ;;
+            *)        pri=2; marker='◌' ;;
         esac
         # Hard-truncate the id so the path column always starts at the same
         # offset, no matter how long the branch name is.
         (( ${#id_disp} > id_width )) && id_disp="${id_disp[1,id_width-1]}…"
-        local id_padded=$(printf '%-*s' "$id_width" "$id_disp")
-        local label="$(state_marker "$state") $id_padded"
-        case "$state" in
-            attached) label=$'\e[1;32m'"$label"$'\e[0m' ;;
-            detached) label=$'\e[32m'"$label"$'\e[0m' ;;
-        esac
+        local label="${pre}${marker} ${(r:id_width:)id_disp}${post}"
         printf '%d\t%s  %s\t%s\t%s\n' "$pri" "$label" "$display_path" "$id" "$wt_path"
     done | sort -t$'\t' -k1,1n -k3 | cut -d$'\t' -f2-)
 
