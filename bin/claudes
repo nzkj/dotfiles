@@ -170,10 +170,10 @@ print_rows() {
 
         # updatedAt is milliseconds; collapse to seconds for the sort key.
         updated_s=$(( updated / 1000 ))
-        rows+=$(printf '%d\t%010d\t%s %-*s  %-7s  %s\t%s\t%s\t%s\n' \
+        rows+=$(printf '%d\t%010d\t%s %-*s  %-7s  %s\t%s\t%s\t%s\t%s\n' \
             "$pri" "$(( 9999999999 - updated_s ))" \
             "$(state_marker "$state")" "$id_width" "$id_disp" "$state" "$name" \
-            "${pane_id:-NONE}" "${target:-NONE}" "$pid")$'\n'
+            "${pane_id:-NONE}" "${target:-NONE}" "$pid" "$id_disp")$'\n'
     done <<<"$all_data"
 
     # Drop .pending marker files that have outlived their truth.
@@ -211,7 +211,9 @@ main() {
     [[ -d "$SESSIONS_DIR" ]]   || die "$SESSIONS_DIR does not exist"
 
     # Preview chooses based on whether the row has a real tmux target.
-    # {2} is pane_id (or NONE), {4} is the pid (always present).
+    # {2} is pane_id (or NONE), {4} is the pid (always present). Field 5
+    # (id_disp) is trailing for the `--complete` handler — fzf never reads
+    # it via a placeholder.
     # `-S -` captures the FULL scrollback so the user can scroll up through
     # the entire pane history. The capture only runs for the row currently
     # focused in fzf, so the cost is paid once per row visit — not upfront
@@ -275,6 +277,7 @@ main() {
         --bind "start:execute-silent(echo \$FZF_PORT > $CLAUDES_PORT_FILE)" \
         --bind "focus:transform($SCRIPT --preview-window-action {2})" \
         --bind "load:transform($SCRIPT --preview-window-action {2})" \
+        --bind "tab:transform-query($SCRIPT --complete {q})" \
         > "$CLAUDES_SEL_FILE"
 
     local selected
@@ -310,6 +313,32 @@ main() {
 
 if [[ "${1:-}" == "--list" ]]; then
     print_rows
+    exit 0
+fi
+
+# Extend the query to the longest common prefix of every id starting with
+# {q}, like zsh's cd-completion. Wired up via `tab:transform-query(...)` so
+# each tab press in the picker grows the query as far as it can without
+# ambiguity. Prefix-only matching (not fuzzy) — the goal is "fill the safe
+# bit", which fuzzy LCP doesn't give. Re-runs `print_rows` rather than
+# caching; tab is rare enough that the cost doesn't matter.
+if [[ "${1:-}" == "--complete" ]]; then
+    q=${2:-}
+    print_rows | awk -F'\t' -v q="$q" '
+        # Field 5 of the post-cut row is the bare id (e.g. "dotfiles" or
+        # "example-project-1/feature-a"); see print_rows.
+        { id = $5 }
+        substr(id, 1, length(q)) != q { next }
+        n == 0 { lcp = id; n = 1; next }
+        {
+            ml = length(lcp); il = length(id); m = (ml < il) ? ml : il
+            i = 1
+            while (i <= m && substr(lcp, i, 1) == substr(id, i, 1)) i++
+            lcp = substr(lcp, 1, i-1)
+            n++
+        }
+        END { print (n == 0 ? q : lcp) }
+    '
     exit 0
 fi
 

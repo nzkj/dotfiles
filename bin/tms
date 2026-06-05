@@ -11,6 +11,15 @@ setopt extended_glob no_aliases
 PROJECTS_ROOT="${HOME}/projects"
 WORKTREES_ROOT="${HOME}/worktrees"
 
+# Absolute path to this script — used to re-invoke ourselves from inside fzf
+# bindings (e.g. tab completion). `:A` resolves with symlinks when invoked
+# via a path; otherwise fall back to PATH lookup.
+if [[ "$0" == */* ]]; then
+    SCRIPT=${0:A}
+else
+    SCRIPT=$(whence -p "$0" 2>/dev/null || print -- "$0")
+fi
+
 die() { print -u2 -- "tms: $*"; exit 1; }
 
 # --- tmux session lookup -----------------------------------------------------
@@ -247,7 +256,7 @@ run_picker() {
         --no-multi \
         --cycle \
         --scheme=path \
-        --bind 'tab:transform-query(printf %s {2})' \
+        --bind "tab:transform-query($SCRIPT --complete {q})" \
         --bind 'change:first' \
         --prompt='tms> ' \
         --header="$header" \
@@ -442,5 +451,29 @@ main() {
 # Only run main when executed directly. Sourced from bin/tms-bench, this
 # guard lets the helpers be reused without firing the picker.
 if [[ "$ZSH_EVAL_CONTEXT" == toplevel ]]; then
+    # Extend the query to the longest common prefix of every id starting
+    # with {q}, like zsh's cd-completion. Wired up via
+    # `tab:transform-query(...)` so each tab press grows the query as far
+    # as it can without ambiguity. Prefix-only (not fuzzy) — fuzzy LCP
+    # doesn't give "fill the safe bit". Reads from `discover_cached` so
+    # the worktree list is already warm.
+    if [[ "${1:-}" == "--complete" ]]; then
+        q=${2:-}
+        discover_cached | awk -F'\t' -v q="$q" '
+            { id = $1 }
+            substr(id, 1, length(q)) != q { next }
+            n == 0 { lcp = id; n = 1; next }
+            {
+                ml = length(lcp); il = length(id); m = (ml < il) ? ml : il
+                i = 1
+                while (i <= m && substr(lcp, i, 1) == substr(id, i, 1)) i++
+                lcp = substr(lcp, 1, i-1)
+                n++
+            }
+            END { print (n == 0 ? q : lcp) }
+        '
+        exit 0
+    fi
+
     main "$@"
 fi
