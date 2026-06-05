@@ -36,8 +36,9 @@ session_exists() {
 
 # --- worktree discovery ------------------------------------------------------
 
-# Emit "id\tpath\tstate" lines for one repo: existing worktrees plus every
-# local branch that doesn't yet have a worktree (as a creation candidate).
+# Emit "id\tpath" lines for one repo: existing worktrees plus every local
+# branch that doesn't yet have a worktree (as a creation candidate). Session
+# state is overlaid later in format_rows so this output can be cached.
 # Run as a background job per repo; writes are line-sized so concurrent
 # subshell output interleaves safely (< PIPE_BUF).
 discover_one() {
@@ -88,7 +89,7 @@ discover_one() {
         seen_branches[$br]=1
         id="${repo_name}/${br}"
         wt_candidate="${WORKTREES_ROOT}/${repo_name}/${br}"
-        print -- "${id}\t${wt_candidate}\t${SESSIONS[$id]:-none}"
+        print -- "${id}\t${wt_candidate}"
     done
     exec {refs_fd}<&-
 }
@@ -126,40 +127,115 @@ emit_entry() {
     else
         return 0
     fi
-    print -- "${id}\t${wt_path}\t${SESSIONS[$id]:-none}"
+    print -- "${id}\t${wt_path}"
+}
+
+# --- cache -------------------------------------------------------------------
+
+CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/tms/discover.tsv"
+
+# True iff the cache file exists and is newer than every input that can
+# change discover's output. We stat the things git actually touches when
+# branches/worktrees change: refs/heads, refs/remotes/origin, packed-refs
+# (post-fetch + post-pack), and the worktrees subdir. ~60 in-process stats
+# via zsh/stat, no forks.
+cache_fresh() {
+    [[ -f "$CACHE_FILE" ]] || return 1
+    zmodload -F zsh/stat b:zstat 2>/dev/null || return 1
+    local -a st
+    zstat -A st +mtime -- "$CACHE_FILE" 2>/dev/null || return 1
+    local cache_mt=$st[1]
+
+    local -a inputs
+    local repo_dir f
+    inputs=( "$PROJECTS_ROOT" )
+    for repo_dir in "$PROJECTS_ROOT"/*(N/); do
+        [[ -d "$repo_dir/.git" ]] || continue
+        inputs+=(
+            "$repo_dir/.git/refs/heads"
+            "$repo_dir/.git/refs/remotes/origin"
+            "$repo_dir/.git/packed-refs"
+            "$repo_dir/.git/worktrees"
+        )
+    done
+
+    for f in "${inputs[@]}"; do
+        [[ -e "$f" ]] || continue
+        zstat -A st +mtime -- "$f" 2>/dev/null || continue
+        (( st[1] > cache_mt )) && return 1
+    done
+    return 0
+}
+
+bust_cache() { rm -f -- "$CACHE_FILE" 2>/dev/null }
+
+# discover_cached — emit "id\twt_path" lines, served from cache when the
+# cache is newer than any git state that affects discover output.
+# Atomic write via tmp+rename; concurrent invocations are safe.
+discover_cached() {
+    if cache_fresh; then
+        cat -- "$CACHE_FILE"
+        return 0
+    fi
+    local out
+    out=$(discover) || return 1
+    mkdir -p -- "${CACHE_FILE:h}" 2>/dev/null
+    local tmp="${CACHE_FILE}.$$"
+    print -r -- "$out" > "$tmp" && mv -f -- "$tmp" "$CACHE_FILE"
+    print -r -- "$out"
 }
 
 # --- picker ------------------------------------------------------------------
+
+# Read "id\twt_path" lines on stdin, look up session state from the global
+# $SESSIONS map, and emit fzf rows of "display\tid\twt_path" with attached
+# sessions sorted first. Single awk pass — the per-row zsh while-read loop
+# was ~30 ms for 700+ rows; awk does the same work in ~5 ms.
+# Sessions are smuggled in via env var, US/RS-separated to avoid clashes
+# with any character a tmux session name could contain.
+format_rows() {
+    local payload="" k
+    for k in "${(@k)SESSIONS}"; do
+        payload+="${k}"$'\x1e'"${SESSIONS[$k]}"$'\x1f'
+    done
+    SESSIONS_STR="$payload" awk -F'\t' '
+BEGIN {
+    n = split(ENVIRON["SESSIONS_STR"], a, "\x1f")
+    for (i = 1; i <= n; i++) {
+        p = index(a[i], "\x1e")
+        if (p > 0) S[substr(a[i], 1, p-1)] = substr(a[i], p+1)
+    }
+    HOME = ENVIRON["HOME"] "/"; HOME_LEN = length(HOME)
+    PROJ = "~/projects/"; PROJ_LEN = length(PROJ)
+    WT   = "~/worktrees/"; WT_LEN  = length(WT)
+}
+{
+    if ($1 == "") next
+    dp = $2
+    if (substr(dp, 1, HOME_LEN) == HOME) dp = "~/" substr(dp, HOME_LEN + 1)
+    st = ($1 in S) ? S[$1] : "none"
+    if      (st == "attached") { pri = 0; mk = "●"; c = "\033[1;32m"; r = "\033[0m" }
+    else if (st == "detached") { pri = 1; mk = "○"; c = "\033[32m";   r = "\033[0m" }
+    else                       { pri = 2; mk = "◌"; c = "";           r = ""        }
+    if (substr(dp, 1, PROJ_LEN) == PROJ)
+        rendered = sprintf("%-9s %s%s%s", "projects", c, substr(dp, PROJ_LEN + 1), r)
+    else if (substr(dp, 1, WT_LEN) == WT)
+        rendered = sprintf("%-9s %s%s%s", "worktrees", c, substr(dp, WT_LEN + 1), r)
+    else
+        rendered = dp
+    printf "%d\t%s%s%s %s\t%s\t%s\n", pri, c, mk, r, rendered, $1, $2
+}
+' | sort -t$'\t' -k1,1n -k3 | cut -d$'\t' -f2-
+}
 
 # Build "display\tid\tpath" lines and run fzf.
 # Output: query\n key\n selected_row (any may be empty).
 run_picker() {
     local header_extra=$1
-    local rows entries header
-    entries=$(discover)
-    # Prepend a numeric state-priority field so attached → detached → none
-    # bubbles to the top in sorted order, then strip it back off.
-    local id_width=50
-    # Format each entry inline — no $() per row (those forks dominate runtime
-    # for hundreds of rows). state_marker + padding are case + (r:N:).
-    rows=$(print -r -- "$entries" | while IFS=$'\t' read -r id wt_path state; do
-        [[ -z "$id" ]] && continue
-        # Every name gets an `=` — bare `local foo` in zsh prints the current
-        # value on re-entry through the loop, which would leak into the rows.
-        local display_path=${wt_path/#$HOME/\~} id_disp=$id pri="" marker="" pre="" post=""
-        case "$state" in
-            attached) pri=0; marker='●'; pre=$'\e[1;32m'; post=$'\e[0m' ;;
-            detached) pri=1; marker='○'; pre=$'\e[32m';   post=$'\e[0m' ;;
-            *)        pri=2; marker='◌' ;;
-        esac
-        # Hard-truncate the id so the path column always starts at the same
-        # offset, no matter how long the branch name is.
-        (( ${#id_disp} > id_width )) && id_disp="${id_disp[1,id_width-1]}…"
-        local label="${pre}${marker} ${(r:id_width:)id_disp}${post}"
-        printf '%d\t%s  %s\t%s\t%s\n' "$pri" "$label" "$display_path" "$id" "$wt_path"
-    done | sort -t$'\t' -k1,1n -k3 | cut -d$'\t' -f2-)
+    local rows header
+    rows=$(discover_cached | format_rows)
 
-    header='enter: open  •  type <repo>/<branch> for a new worktree'
+    header='enter: open highlighted  •  alt-enter: create <repo>/<branch> from query'
     [[ -n "$header_extra" ]] && header="${header_extra}"$'\n'"${header}"
 
     print -r -- "$rows" | fzf \
@@ -167,27 +243,18 @@ run_picker() {
         --with-nth=1 \
         --delimiter=$'\t' \
         --print-query \
-        --expect=enter \
+        --expect=enter,alt-enter \
         --no-multi \
         --cycle \
         --scheme=path \
         --bind 'tab:transform-query(printf %s {2})' \
+        --bind 'change:first' \
         --prompt='tms> ' \
         --header="$header" \
         --layout=reverse
 }
 
 # --- input handling ----------------------------------------------------------
-
-# Look up an existing worktree's path by id; empty string if not present.
-# Branch candidates emitted by discover have a would-be path that doesn't
-# exist on disk yet — filter those out so the caller falls through to
-# create_worktree.
-worktree_path_for() {
-    local id=$1 candidate
-    candidate=$(discover | awk -F'\t' -v id="$id" '$1==id{print $2; exit}')
-    [[ -d "$candidate" ]] && print -- "$candidate"
-}
 
 create_worktree() {
     local repo=$1 branch=$2
@@ -202,8 +269,51 @@ create_worktree() {
         git_cmd=(git -C "$repo_dir" worktree add -b "$branch" "$wt_path")
     fi
 
-    "${git_cmd[@]}" >/dev/null || return 1
+    "${git_cmd[@]}" >/dev/null 2>&1 || return 1
     print -r -- "$wt_path"
+}
+
+# Ensure a usable worktree exists for $repo/$branch. Three cases:
+#   1. Folder present — print it and return 0.
+#   2. git has the worktree registered but the folder is gone (user rm'd
+#      it). Prompt; on yes, prune + recreate; on no, return 2.
+#   3. Nothing registered — git worktree add. Return 1 on failure.
+# Stdout (on success): the path of the resulting worktree. Recreation
+# always lands at the canonical tms path, which may differ from $wt_path.
+ensure_worktree() {
+    local repo=$1 branch=$2 wt_path=$3
+    local repo_dir="$PROJECTS_ROOT/$repo"
+
+    if [[ -d "$wt_path" ]]; then
+        print -r -- "$wt_path"
+        return 0
+    fi
+
+    # Porcelain emits one `worktree <abs-path>` line per entry, so a
+    # fixed-string whole-line match tells us whether git still thinks this
+    # path is a live worktree.
+    if git -C "$repo_dir" worktree list --porcelain 2>/dev/null \
+            | grep -Fxq "worktree $wt_path"; then
+        local display=${wt_path/#$HOME/\~}
+        # Use fzf for the confirmation rather than a raw prompt — running
+        # inside a tmux popup, hand-rolled prints to stderr leave residue
+        # that the next fzf invocation restores from its alt-buffer.
+        local choice
+        choice=$(printf 'no — return to picker\nyes — prune and recreate\n' \
+            | fzf \
+                --header="worktree '$display' is missing" \
+                --prompt='recreate? ' \
+                --layout=reverse \
+                --no-multi)
+        [[ "$choice" == yes* ]] || return 2
+        git -C "$repo_dir" worktree prune >/dev/null 2>&1
+        bust_cache  # prune changed worktree registration; refs/worktrees mtime may not catch it
+    fi
+
+    local new_path
+    new_path=$(create_worktree "$repo" "$branch") || return 1
+    bust_cache  # new worktree directory → next picker must rediscover
+    print -r -- "$new_path"
 }
 
 # --- session lifecycle -------------------------------------------------------
@@ -242,10 +352,13 @@ main() {
 
     local id wt_path header_msg=""
     while true; do
-        local picker_out
+        # Every name gets an `=` — bare `local foo` in zsh prints the current
+        # value on re-entry through the loop, which flashes onto the terminal
+        # between fzf invocations.
+        local picker_out=""
         picker_out=$(run_picker "$header_msg")
 
-        local query key selected rest
+        local query="" key="" selected="" rest=""
         query=${picker_out%%$'\n'*}
         rest=${picker_out#*$'\n'}
         key=${rest%%$'\n'*}
@@ -256,9 +369,13 @@ main() {
         fi
 
         # Cancellation: Esc / Ctrl-C => key is empty.
-        [[ "$key" != "enter" ]] && exit 0
+        [[ "$key" != "enter" && "$key" != "alt-enter" ]] && exit 0
 
-        if [[ -n "$selected" ]]; then
+        # enter: open the highlighted row when present. alt-enter forces
+        # creation from the query — needed when fzf is still fuzzy-matching a
+        # similarly-named entry and would otherwise hijack a new-worktree
+        # request.
+        if [[ "$key" == "enter" && -n "$selected" ]]; then
             # Row format: <display>\t<id>\t<wt_path>
             local sel_rest=${selected#*$'\t'}
             id=${sel_rest%%$'\t'*}
@@ -266,16 +383,22 @@ main() {
             if [[ -d "$wt_path" ]]; then
                 break
             fi
-            # Branch candidate: worktree doesn't exist yet — create it.
-            local sel_repo=${id%%/*} sel_branch=${id#*/}
-            if create_worktree "$sel_repo" "$sel_branch" >/dev/null; then
-                break
+            # Main checkout missing — out of scope for tms recovery.
+            if [[ "$id" != */* ]]; then
+                header_msg="✗ '$id' is missing — restore it manually"
+                continue
             fi
-            header_msg="✗ worktree creation aborted or failed"
-            continue
+            local sel_repo=${id%%/*} sel_branch=${id#*/}
+            local new_path=""
+            new_path=$(ensure_worktree "$sel_repo" "$sel_branch" "$wt_path")
+            case $? in
+                0) wt_path=$new_path; break ;;
+                2) header_msg="(skipped recreating $id)"; continue ;;
+                *) header_msg="✗ worktree creation aborted or failed"; continue ;;
+            esac
         fi
 
-        # Typed entry with no match — resolve from the query.
+        # alt-enter, or enter with no highlighted row — resolve from the query.
         local typed=$query
         [[ -z "$typed" ]] && exit 0
 
@@ -296,25 +419,28 @@ main() {
             continue
         fi
 
-        local existing
-        existing=$(worktree_path_for "$typed")
-        if [[ -n "$existing" ]]; then
-            id=$typed
-            wt_path=$existing
-            break
-        fi
+        # Resolve to the registered path if discover knows this id;
+        # otherwise fall back to the canonical tms path so ensure_worktree
+        # has something to check / create at.
+        local candidate=""
+        candidate=$(discover_cached | awk -F'\t' -v id="$typed" '$1==id{print $2; exit}')
+        [[ -z "$candidate" ]] && candidate="$WORKTREES_ROOT/$repo/$branch"
 
-        # New worktree: confirm + create.
-        if create_worktree "$repo" "$branch" >/dev/null; then
-            id=$typed
-            wt_path="$WORKTREES_ROOT/$repo/$branch"
-            break
-        fi
-        header_msg="✗ worktree creation aborted or failed"
+        local new_path=""
+        new_path=$(ensure_worktree "$repo" "$branch" "$candidate")
+        case $? in
+            0) id=$typed; wt_path=$new_path; break ;;
+            2) header_msg="(skipped recreating $typed)"; continue ;;
+            *) header_msg="✗ worktree creation aborted or failed"; continue ;;
+        esac
     done
 
     ensure_session "$id" "$wt_path" || die "failed to create session '$id'"
     enter_session  "$id"
 }
 
-main "$@"
+# Only run main when executed directly. Sourced from bin/tms-bench, this
+# guard lets the helpers be reused without firing the picker.
+if [[ "$ZSH_EVAL_CONTEXT" == toplevel ]]; then
+    main "$@"
+fi
