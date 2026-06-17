@@ -239,10 +239,23 @@ BEGIN {
 
 # Build "display\tid\tpath" lines and run fzf.
 # Output: query\n key\n selected_row (any may be empty).
+#
+# Ordering: open sessions stay pinned above everything while you type, but rows
+# within each band are still ranked by query relevance. fzf can't do both at
+# once — its relevance sort flattens the banding — so we keep --no-sort (fzf
+# shows our exact order) and re-rank ourselves on every keystroke via
+# change:reload → `$SCRIPT --rank`, which ranks each band (attached, detached,
+# none) by relevance and concatenates them back in priority order.
 run_picker() {
     local header_extra=$1
     local rows header
     rows=$(discover_cached | format_rows)
+
+    # Snapshot the formatted rows so the per-keystroke re-ranker reads them
+    # without re-running discover or tmux.
+    local rows_file="${CACHE_FILE:h}/picker.$$"
+    mkdir -p -- "${rows_file:h}" 2>/dev/null
+    print -r -- "$rows" > "$rows_file"
 
     header='enter: open highlighted  •  alt-enter: create <repo>/<branch> from query'
     [[ -n "$header_extra" ]] && header="${header_extra}"$'\n'"${header}"
@@ -255,12 +268,15 @@ run_picker() {
         --expect=enter,alt-enter \
         --no-multi \
         --cycle \
-        --scheme=path \
+        --no-sort \
         --bind "tab:transform-query($SCRIPT --complete {q})" \
-        --bind 'change:first' \
+        --bind "change:reload($SCRIPT --rank {q} $rows_file)+first" \
         --prompt='tms> ' \
         --header="$header" \
         --layout=reverse
+    local st=$?
+    rm -f -- "$rows_file"
+    return $st
 }
 
 # --- input handling ----------------------------------------------------------
@@ -457,6 +473,25 @@ if [[ "$ZSH_EVAL_CONTEXT" == toplevel ]]; then
     # as it can without ambiguity. Prefix-only (not fuzzy) — fuzzy LCP
     # doesn't give "fill the safe bit". Reads from `discover_cached` so
     # the worktree list is already warm.
+    # Re-rank rows for the live picker (bound to change:reload). Open sessions
+    # stay banded on top — attached, then detached, then none — but each band
+    # is ranked by query relevance via `fzf --filter` so the best matches
+    # surface within the band instead of sinking under input order. Empty query
+    # => the pre-sorted file as-is. Marks (●/○/◌) come from format_rows and
+    # never occur in paths, so they're a safe band delimiter.
+    if [[ "${1:-}" == "--rank" ]]; then
+        q=${2:-}; rows_file=${3:-}
+        [[ -r "$rows_file" ]] || exit 0
+        if [[ -z "$q" ]]; then
+            cat -- "$rows_file"
+            exit 0
+        fi
+        grep -F  '●' -- "$rows_file"                 | fzf --filter="$q" --nth=2 --delimiter=$'\t'
+        grep -F  '○' -- "$rows_file"                 | fzf --filter="$q" --nth=2 --delimiter=$'\t'
+        grep -vF '●' -- "$rows_file" | grep -vF '○'  | fzf --filter="$q" --nth=2 --delimiter=$'\t'
+        exit 0
+    fi
+
     if [[ "${1:-}" == "--complete" ]]; then
         q=${2:-}
         discover_cached | awk -F'\t' -v q="$q" '
